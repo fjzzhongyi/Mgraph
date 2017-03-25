@@ -1,0 +1,99 @@
+MEDEN 1.0.1
+------------------------
+
+This tools Mines Heavy Subgraphs in Time-Evolving Networks. The implemented 
+algorithm is described in the following paper:
+
+Petko Bogdanov, Misael Mongiovi, Ambuj K. Singh. Mining Heavy Subgraphs in Time-Evolving Networks. IEEE International Conference on Data Mining. 2011.
+
+You may also be interested in the following related papers:
+
+Misael Mongiovi, Petko Bogdanov, Ambuj K. Singh. Mining evolving network processes. IEEE International Conference on Data Mining. 2013.
+
+Misael Mongiovi, Petko Bogdanov, Razvan Ranca, Ambuj K. Singh, Evangelos E. Papalexakis, Christos Faloutsos. NetSpot: Spotting Significant Anomalous Regions on Dynamic Networks. SIAM International Conference on Data Mining. 2013. 
+
+If you use this software please consider citing the above papers.
+
+[License Agreement]
+Please read this agreement carefully before using this software and its
+accompanied dataset. By using the software and the dataset enclosed in 
+this package (NetSpot), you agree to the terms of this license.
+If you do not agree to the terms of this license, please delete this
+package and DO NOT USE it.
+(1) This copy is for your internal use only. Please DO NOT redistribute it. 
+The software is available at http://www.cs.ucsb.edu/~dbl/software.php. 
+Please DO NOT post this package on the internet. 
+(2) As unestablished research software, this software is provided on an 
+``as is'' basis without warranty of any kind, either expressed or 
+implied. The downloading, or executing any part of this software 
+constitutes an implicit agreement to these terms. These terms and 
+conditions are subject to change at any time without prior notice.
+No any other usage of the package is allowed without a written permission 
+from the authors. It can NOT be used for any commercial interest.
+(3) The authors do not hold any responsibility for the correctness of the 
+software and datasets.
+(4) The authors appreciate it if you can send us your feedback and test results.
+
+3. COPYRIGHT
+ALL copyrights of the software are reserved by authors.
+
+CONTAINS:
+------------------------
+
+- meden.jar: executable
+- traffic-small.txt: input example
+- spec.txt: input example for generating time-evolving graphs.
+
+USAGE:
+------------------------
+
+1. Convert a quadruples format to an easy to load sparse format
+
+java -Xms1024m -Xmx2548m -jar meden.jar -convert traffic-small.txt
+
+This creates tgraph.01.quadruples.tg in the same folder where the original is.
+
+2. Assuming the quadruples file have been converted run meden using:
+
+java -Xms1024m -Xmx2048m -jar meden.jar -run traffic-small.txt 0 10 d
+
+where the name is the same as the original name (the loader will look for <name>.tg), following are start and end of the query interval
+
+3. To run topK iteratively use
+
+java -Xms1024m -Xmx2048m -jar meden.jar -runtopk k traffic-small.txt 0 10 d
+
+where in this case k is the number of top patterns required. This version runs Meden multiple times while removing (setting the edges to -1 in the respective time slots) one pattern at a time. 
+
+4. Run for datasets with any positive and negative values in the edges (also for -runtopk):
+
+java -Xms1024m -Xmx2048m -jar meden.jar -run traffic-small.txt 0 10 w
+
+5. Run for datasets with any positive and negative values in the edges (also for -runtopk):
+
+java -Xms1024m -Xmx2048m -jar meden.jar -run traffic-small.txt 0 10 p 0.01
+
+where 0.01 is the p-value threshold mu (belove this value it is considered significant).
+
+6. Generate synthetic data:
+
+java -jar meden.jar -gen spec.txt
+
+The syntax of spec.txt is the following:
+
+# Every non-commented line specifies a synthetic time graph
+# Format of the line is:
+# <fulpath>,{w,d},{er,sf},<pfrac:[0,1]>,<N:[0,1]>,<T:[0,1]>,<lambda>,<n>,<m>,<t>
+# where
+# - fullpath is the name of the output file
+# - w generates a graph with exponential weights, while d creates a 0/1 graph
+# - er is to generate Erdos-Renyi, sf is to generate a scale free graphs 
+# - pfrac is the fraction of positive time-edges, usually around 0.1 or lower
+# - N is the rate of propagating to neighbors in the diffusion, usually ~ 0.3 
+# - T is the rate of propagating in time, usually ~ 0.9
+# - lambda of the exponential for sampling both positive and negative weights(disregarded when discrete is set)
+# - n is number of nodes in the graph 
+# - m is number of edges in the graph (disregarded when scale-free generation)
+# - t is number of slices
+
+For questions, contact Petko Bogdanov (petko@cs.ucsb.edu)
