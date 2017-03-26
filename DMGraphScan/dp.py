@@ -172,7 +172,7 @@ def dp(Graph=None,Pvalue=None,fileinput=True,verbose=False):
         writeOmega(daysOmega2)
     else:
         # assuming that this program is not run in segments
-        return [list(each) for each in root.omega[-1]]
+        return [[node.name for node in each] for each in root.omega[-1]]
 
 def DMGraphScan(Graph,Pvalue,alpha_max=0.15,input_B=2,verbose=False):
     gv.B=input_B
@@ -180,7 +180,7 @@ def DMGraphScan(Graph,Pvalue,alpha_max=0.15,input_B=2,verbose=False):
     
     # !!!! alpha is constant, needed modification
     gv.segment=len(Pvalue[0])
-    dp(Graph,Pvalue,fileinput=False,verbose=verbose)
+    return dp(Graph,Pvalue,fileinput=False,verbose=verbose)
 
 if __name__=='__main__':
 
