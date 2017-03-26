@@ -10,8 +10,8 @@ segmentList=range(1,8)
 
 solutionlists={}
 
-class GloV:
-    def __init__(self,rootdir):
+class Glov:
+    def __init__(self):
         self.base=1
         self.duration=0
         self.slices=-1
@@ -20,15 +20,16 @@ class GloV:
         self.segment=2
         self.B=2
         self.if_filter=False
+    
+    def add_rootdir(self,rootdir):     
         self.froot=os.path.join(rootdir,'input')
-
         self.fwroot=os.path.join(rootdir,'output')
         self.fmroot=os.path.join(rootdir,'meta')
         if not os.path.exists(self.fwroot):
             os.makedirs(self.fwroot)
         if not os.path.exists(self.fmroot):
             os.makedirs(self.fmroot)
-gv=GloV(sys.argv[1])
+gv=Glov()
 ########
 ########
 alpha=0.15

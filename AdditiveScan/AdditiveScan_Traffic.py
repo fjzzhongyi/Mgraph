@@ -511,7 +511,7 @@ def addPvalue(froot,slice):
 		s=f.readline()
 	#print Pvalue
 	return att,Pvalue
-
+'''
 def addPvalue(froot,slice):
 	print 'add_pvalue...'
 	Pvalue={}
@@ -525,7 +525,7 @@ def addPvalue(froot,slice):
 		s=f.readline()
 	#print Pvalue
 	return Pvalue
-	
+'''	
 def getSlices(froot):
 	print 'getSlices'
 	f=open(os.path.join(froot,'pvalues.dat'),'r')

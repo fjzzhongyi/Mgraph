@@ -1,0 +1,25 @@
+NPHGS:
+resultNodes,score=detection(PValue, E, alpha_max='0.15', npss='BJ', verbose_level = 0)
+resultNodes is list of nodes
+score reflects the result score
+verbose_level!=0: print information
+Pvalue={int:float, ...}  1:1.00
+E={str:int}  {"12_13":1.0}   str=name1+'_'+name2
+
+DMGraphScan dp.py
+resultNodes = DMGraphScan(Graph, Pvalue, alpha_max=0.15, input_B=2)
+
+DepthFirstScan/DFS.py 
+resultNodes, score = depth_first_subgraph_detection (graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15)
+graph = {int:[int]}
+att = [[float], ...]
+	#G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
+	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
+
+AdditiveScan/AdditiveScan_Traffic.py
+def additive_graphscan(graph, att, npss,globalPValue, iterations_bound=10, ncores=8, minutes=30)
+graph = {int:[int]}
+att/globalPValue = [[float], ...]
+	#G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
+	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
+npss='BJ'

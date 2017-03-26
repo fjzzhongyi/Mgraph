@@ -1,7 +1,7 @@
 from vertex import leaf,nonleaf
 from node import Node
 from ksubgraph import ISTG
-import os,datetime,threading,itertools
+import os,datetime,threading,itertools,sys
 from GV import *
 from funcs import *
 #
@@ -106,7 +106,12 @@ def test():
 
 
 
-def dp():
+def dp(Graph=None,Pvalue=None,fileinput=True,verbose=False):
+    if fileinput is True:
+        # we need to add gv. root filepaths
+        gv.add_rootdir(sys.argv[1])
+    
+    
     name_node.clear()
     num_name.clear()
     
@@ -114,19 +119,18 @@ def dp():
     print 'Starting\n'
 
     if True:
-        G=genG()
+        G=genG(Graph,fileinput)
         G=connectedG(G)
-        Gpv,vroot=genGpv()
-        print vroot
+        Gpv,vroot=genGpv(Graph,Pvalue,fileinput)
+        print "root is :" + str(vroot)
         # def ISTG(G, Gpv, vroot, galpha)
         root=ISTG(G,Gpv,vroot,alpha)
-        saveISTG(root)
+        #saveISTG(root)
     else:
-        G=genG()
+        G=genG(Graph,fileinput)
         G=connectedG(G)
-        Gpv,vroot=genGpv()
+        Gpv,vroot=genGpv(Pvalue,fileinput)
         root=readISTG()
-
     print root, root.name, root.nchild, root.child, root.parent
     add_parent()
 
@@ -143,28 +147,40 @@ def dp():
     #add_pdvalue()
     #dGraphScan(root)
     #daysOmega.append(root.omega[-1])
-
-
+    getDuration(Pvalue,fileinput)
     while True:
         gv.start=gv.base+gv.segment*nnn
         gv.end=min([gv.base+gv.segment*(nnn+1),gv.base+gv.duration])
         nnn+=1
-        gv.slices=gv.end-gv.start 
+        gv.slices=gv.end-gv.start
         #add pvalue, pdvalu
-        add_pvalue()
+        add_pvalue(Pvalue,fileinput)
         dGraphScan(root)
+        # -1 denotes that this omega is consistent to the biggest B, which always performs best
         daysOmega.append(root.omega[-1])
         daysOmega2.append(root.getFilterOmega())
         if gv.end==gv.base+gv.duration:
             break
     
-    gv.if_filter=False
-    writeOmega(daysOmega)
-    gv.if_filter=True
-    writeOmega(daysOmega2)
-    
     te=datetime.datetime.now()
-    print 'Duration:'+ str((te-tb).seconds)
+    print 'Time Duration:'+ str((te-tb).seconds)
+    # output result to files or return 
+    if fileinput is True:
+        gv.if_filter=False
+        writeOmega(daysOmega)
+        gv.if_filter=True
+        writeOmega(daysOmega2)
+    else:
+        # assuming that this program is not run in segments
+        return [list(each) for each in root.omega[-1]]
+
+def DMGraphScan(Graph,Pvalue,alpha_max=0.15,input_B=2,verbose=False):
+    gv.B=input_B
+    # segment should not play its role in this Function, supposing that input size is not so huge. so no need for cut them into segments
+    
+    # !!!! alpha is constant, needed modification
+    gv.segment=len(Pvalue[0])
+    dp(Graph,Pvalue,fileinput=False,verbose=verbose)
 
 if __name__=='__main__':
 

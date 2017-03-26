@@ -14,7 +14,7 @@ import networkx as nx
 name_node={}
 num_name={}
 
-def npss_detection(PValue, E, alpha_max, npss, verbose_level = 0):#pvalue, network,alpha
+def detection(PValue, E, alpha_max='0.15', npss='BJ', verbose_level = 0):#pvalue, network,alpha
 
 	if verbose_level == 2:
 		print 'PValue : ',PValue # is a dictionary, i:p-valuei
@@ -161,7 +161,7 @@ if __name__ =='__main__':
 	for slice in range(1,slices):
 		print 'slice=' +str(slice)+'...'
 		Pvalue=addPvalue(froot,slice)
-		resultNodes,score =npss_detection(Pvalue,G,alpha_max,npss)
+		resultNodes,score =detection(Pvalue,G,alpha_max,npss)
 		result.append((resultNodes,score))
 	runningTime = time.time() - startTime
 	print 'finishing ,duration: '+ str(runningTime)
