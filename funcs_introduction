@@ -17,9 +17,25 @@ att = [[float], ...]
 	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
 
 AdditiveScan/AdditiveScan_Traffic.py
-def additive_graphscan(graph, att, npss,globalPValue, iterations_bound=10, ncores=8, minutes=30)
+def additive_graphscan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30)
 graph = {int:[int]}
 att/globalPValue = [[float], ...]
 	#G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
 	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
 npss='BJ'
+
+
+define another case:
+    Edge has its own pvalue, but vertex hasn't.
+    Graph [edge1, edge2, edge3, ]
+            edge%n: str   format like  "1-2"
+    Pvalue [[float, ],[],[],[]...]
+    result [[edge1,edge2,...],[]...]
+    Graph = ['0-1','0-2','1-2','2-3','3-4','4-5','2-5','1-6']
+    Pvalue=[[0.1,0.2],[0.1,0.1],[0.1,0.4],[0.3,0.1],[0.4,0.4],[0.5,0.1],[0.05,0.1],[0.3,0.14]]
+
+Meden/Meden.py
+result= detection(Graph,Pvalue,alpha_max=0.15)
+THIS method is designed for graph whose edges have pvalues but nodes haven't
+
+
