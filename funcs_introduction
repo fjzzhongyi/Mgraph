@@ -1,22 +1,25 @@
-NPHGS:
-resultNodes,score=detection(PValue, E, alpha_max='0.15', npss='BJ', verbose_level = 0)
+STANDARD FORMAT:
+    Graph = {0:[],1:[],2:[]} node start from zero 0
+    Pvalue = [[],[],[],[],[]] which is corresponding with node by index
+    E = ['0-1','0-2',...'n-m']
+
+NPHGS/NPHGS.py: static
+resultNodes,score=graphscan(Graph, Pvalue, alpha_max='0.15', npss='BJ', verbose_level = 0)
 resultNodes is list of nodes
 score reflects the result score
 verbose_level!=0: print information
-Pvalue={int:float, ...}  1:1.00
-E={str:int}  {"12_13":1.0}   str=name1+'_'+name2
 
-DMGraphScan dp.py
+DMGraphScan/dp.py:  dynamic
 resultNodes = DMGraphScan(Graph, Pvalue, alpha_max=0.15, input_B=2)
 
-DepthFirstScan/DFS.py 
+DepthFirstScan/DFS.py: static 
 resultNodes, score = depth_first_subgraph_detection (graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15)
 graph = {int:[int]}
 att = [[float], ...]
 	#G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
 	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
 
-AdditiveScan/AdditiveScan_Traffic.py
+AdditiveScan/AdditiveScan_Traffic.py static
 def additive_graphscan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30)
 graph = {int:[int]}
 att/globalPValue = [[float], ...]
@@ -31,11 +34,11 @@ define another case:
             edge%n: str   format like  "1-2"
     Pvalue [[float, ],[],[],[]...]
     result [[edge1,edge2,...],[]...]
-    Graph = ['0-1','0-2','1-2','2-3','3-4','4-5','2-5','1-6']
+    E = ['0-1','0-2','1-2','2-3','3-4','4-5','2-5','1-6']
     Pvalue=[[0.1,0.2],[0.1,0.1],[0.1,0.4],[0.3,0.1],[0.4,0.4],[0.5,0.1],[0.05,0.1],[0.3,0.14]]
 
-Meden/Meden.py
-result= detection(Graph,Pvalue,alpha_max=0.15)
+Meden/Meden.py dynamic
+result= detection(E,Pvalue,alpha_max=0.15)
 THIS method is designed for graph whose edges have pvalues but nodes haven't
 
 
