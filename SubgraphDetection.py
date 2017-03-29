@@ -53,7 +53,7 @@ def genSP(froot,slice):
     return Pvalue
 
 def genP(froot):
-    Pvalue={}
+    Pvalue=[]
     f=open(os.path.join(froot,'P'),'r')
     s=f.readline()
     while len(s)>0:
@@ -63,9 +63,9 @@ def genP(froot):
     return Pvalue
 
 def writeFile(outroot,method,result):
-    fw=open(str(method)+'.txt','w+')
+    fw=open(os.path.join(outroot,str(method)+'.txt'),'w+')
     for each in result:
-        fw.write(str([str(each) for each in result]))
+        fw.write(' '.join([str(ei) for ei in each]))
         fw.write('\n')
         fw.flush()
     fw.close()
