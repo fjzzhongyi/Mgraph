@@ -153,7 +153,9 @@ def bjscore(subset, att,globalPValue, alpha_max = 0.15):
     S = []
     for nid in subset:
         S.append([nid, globalPValue[nid]])
+    print S
     alpha = max(item[1] for item in S)
+    print alpha
     if alpha > alpha_max:
         alpha = alpha_max
     nplus = 0.0
@@ -168,6 +170,7 @@ def bjscore(subset, att,globalPValue, alpha_max = 0.15):
     return score
 
 def KL(t, x):
+    print t,x    
     x = x * 1.0
     if 0 < x and x < t and t <= 1:
         if t >= 1:
@@ -268,7 +271,7 @@ def recover_subgraph(compdict, sstar):
     return sstar
 
 
-def additive_graphscan_proc(graph, att ,npss ,globalPValue, compdict, alpha, iterations_bound=10, ncores=8, minutes=30):
+def additive_graphscan_proc(graph, att ,npss ,globalPValue, compdict, alpha=0.15, iterations_bound=10, ncores=8, minutes=30):
     
     flag = True
     sfset = None
