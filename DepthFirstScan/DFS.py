@@ -43,18 +43,24 @@ class Route:
             self.N = n
             self.graph = graph
             self.att = att
+            
+            # what's incl & excl:  include & exclude
             self.incl = dict()
             self.incl[s] = 1
             self.excl = dict()
+            
             # self.bin = [2] * n
             # self.bin[s] = 1
+            # path starts from s
             self.path = [s]
             self.priority = setprioity(self.path, att)
             self.sidetracks = []
+            
             self.sin = []
             self.sins = 0
             self.souts = 0
             self.sout = []
+            
             self.compdict = compdict
             self.alpha = alpha
             # self.nodepri =
@@ -86,16 +92,21 @@ class Route:
 
 
     def get_neis(self):
+        # this func returns the candidate nodes(not only anomalous) that may be included in next step
+        # get res from neis.  res is subset of neis, excluding those 
         neis = self.graph[self.get_current_location()]
         res = []
         for nei in neis:
+            # not to form a loop
             if not self.incl.has_key(nei) and not self.excl.has_key(nei):
                 if not set(self.graph[nei]).intersection(self.path[:-1]):
                     res.append(nei)
+        # the bigger the nodepri is, the priorer ...
         return sorted(res, key=lambda item: self.nodepri[item] * -1)
 
 
     def getsout(self, nid0):
+        # the func 
         sout = []
         souts = 0.0
         Q = []
@@ -114,13 +125,16 @@ class Route:
 
 
     def expand_path(self, idx, neis):
+        # how to expand the path 
         nid = neis[idx]
         self.path.append(nid)
+        # route includes neis[idx], and excludes neis[:idex]
         self.incl[nid] = 1
         for nei in neis[:idx]:
             self.excl[nei] = 1
         for nei in neis[:idx]:
             sout, souts = self.getsout(nei)
+            # keep the biggest souts
             if souts > self.souts:
                 self.souts = souts
 
@@ -199,6 +213,7 @@ def nodepriority(nid, att, compdict = {}, alpha = 0.05):
         return 0
     # return -1 * att[nid][0]
 
+# this func return the total number of input subset's abnormal nodes
 def setprioity(subset, att, compdict = {}, alpha=0.05):
     n = 0
     for i in subset:
@@ -211,7 +226,7 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
 def refine_graph(graph1, att1, alpha):
     # return graph1, att1, {};  graph is a dict(), att1 is a list
     # how to refine the graph:
-    # 
+    # extract connected anomalous nodes into one virtual node
     graph = copy.deepcopy(graph1)
     att = copy.deepcopy(att1)
     bigcomp = []
@@ -295,6 +310,7 @@ def proc(route, priqueue, att, compdict, alpha, subset_score, anomaly_ratio, rad
 
 
 def anomaly_rate(route, compdict):
+    # this cals out anomaly nodes/ all nodes
     n1 = 0.0
     n2 = 0.0
     for nid in route.incl.keys():
@@ -341,6 +357,8 @@ def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, 
     for alpha_i, alpha in enumerate(alphas):
         print alpha_i, alpha
         graph, att, compdict = refine_graph(ori_graph, ori_att, alpha)
+        # for each node in graph, calculate its priority.
+        # the larger its value is,the priorer it is
         nodeprio = [0] * len(graph)
         for nid in range(len(graph)):
             nodeprio[nid] = nodepriority(nid, att, compdict, alpha)
@@ -348,12 +366,13 @@ def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, 
         # print 'seeds', seeds
         print compdict
 
-        # only search first 5 of the seeds 
+        # only search first 5 (at most) of the seeds 
         for seed_i, seed in enumerate(seeds[:5]):
             if not subset_score or seed[0] not in subset_score[0] or seed_i == 0:
                 # print 'compdict[seed[0]]', compdict[seed[0]]
                 route = Route(seed[0], graph, att, nodeprio, compdict, alpha)
                 print seed
+                # why its priority is 1?
                 priqueue = Queue([route, 1])
                 if not subset_score:
                     subset_score = [route.getsubset(), f_score(route.getsubset(), att, compdict), alpha]
@@ -367,6 +386,7 @@ def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, 
                         print 'iterations: ', iter
                         print 'pop:', route.path, route.incl.keys()
                         duration = (time.time() - start_time)
+                        # if duration reached out of time, return none immediately
                         if duration > minutes * 60:
                             print 'time limit reached... '
                             oriset = []
@@ -381,6 +401,7 @@ def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, 
                                 subset_score = [[], 0]
                             return subset_score
                     # print iter, neis
+                    # calc new routes
                     for idx, nei in enumerate(neis):
                         newroute = Route(seed[0], graph, att, nodeprio, compdict, alpha)
                         newroute.incl = copy.deepcopy(route.incl)
