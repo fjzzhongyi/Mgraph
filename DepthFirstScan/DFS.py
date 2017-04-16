@@ -4,6 +4,7 @@ import copy
 import os
 import time,sys,datetime
 
+# Queue simulates a queue
 class Queue:
     def __init__(self, item = None):
         self.items = list()
@@ -22,7 +23,9 @@ class Queue:
     def pop(self):
         return self.items.pop()
 
+
 def getcont(nid, att, compdict, alpha):
+    # get the size of nodes comp contains
     if compdict.has_key(nid):
         return len(compdict[nid])
     else:
@@ -31,7 +34,7 @@ def getcont(nid, att, compdict, alpha):
         else:
             return 0
 
-
+# what is Route
 class Route:
     def __init__(self, s = None, graph = None, att = None, nodepri = None, compdict = None, alpha = None):
         if graph:
@@ -206,24 +209,30 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
     return n
 
 def refine_graph(graph1, att1, alpha):
-    # return graph1, att1, {}
+    # return graph1, att1, {};  graph is a dict(), att1 is a list
+    # how to refine the graph:
+    # 
     graph = copy.deepcopy(graph1)
     att = copy.deepcopy(att1)
     bigcomp = []
     comps = []
+    # search the whole graph 
     for nid, neis in graph.items():
- 
+            # start from node nid, recursively add all connected anomalous nodes(pvalue<=alpha), which composes a subgraph
             comp = [nid]
             queue = [nid]
             while queue:
                 i = queue.pop()
+                # list graph[i]'s edges 
                 for j in graph[i]:
                     if att[j][0] <= alpha and j not in comp:
                         queue.append(j)
                         comp.append(j)
                         bigcomp.append(j)
             comps.append(comp)
+    # filter comp whoes size is only one, which means comps'length may less than n
     comps = [comp for comp in comps if len(comp) > 1]
+    
     n = len(graph)
     compdict = dict()
     for comp in comps:
@@ -234,12 +243,16 @@ def refine_graph(graph1, att1, alpha):
                     neis.append(j)
                     graph[j] = [item for item in graph[j] if item not in comp]
                     graph[j].append(n)
+            # regrad i as normal
             graph[i] = []
             att[i][0] = 1
+        # regard the subgraph as a new node
         graph[n] = list(set(neis))
         att.append([alpha])
         compdict[n] = comp
         n += 1
+    # so now the lenght of graph extended from n to n~2n
+    # compdict[n]: nodes that new virtual node n exactly contains.  NOTE that all nodes are abnormal
     return graph, att, compdict
 
 
@@ -308,18 +321,20 @@ def get_seeds(graph, att, compdict, alpha):
             if nodepriority(nid, att, compdict, alpha) >= 1 and min([nodepriority(nei, att, compdict, alpha) for nei in neis]) == 0:
                 seeds.append([nid, nodepriority(nid, att, compdict, alpha)])
     seeds = sorted(seeds, key=lambda item: item[1] * -1)
+    # guess seeds are set of nodes (from which we continue our depth first scan in sequence). Other words, we should scan from first of seeds
     return seeds
 
     
-# graph: {node_id: [node_ids]}. att: {node_id: value}
+# graph: {node_id: [node_ids]}. att: [[],[],[]]
 # Identify seeds nodes that have higher priorities than their neighbors
 def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15):
+    # note: the func need parameter alpha_max, not alpha
     if not radius:
         radius = len(graph)
     start_time = time.time()
     subset_score = None
+    # those anomalous p-values and sort them from least to most anomalous
     alphas = set(item[0] for item in att if item[0] != 0 and item[0] < alpha_max)
-    # print 'alphas', alphas
     alphas = sorted(list(alphas), key = lambda item: item * -1)
     ori_graph = graph
     ori_att = att
@@ -333,6 +348,7 @@ def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, 
         # print 'seeds', seeds
         print compdict
 
+        # only search first 5 of the seeds 
         for seed_i, seed in enumerate(seeds[:5]):
             if not subset_score or seed[0] not in subset_score[0] or seed_i == 0:
                 # print 'compdict[seed[0]]', compdict[seed[0]]

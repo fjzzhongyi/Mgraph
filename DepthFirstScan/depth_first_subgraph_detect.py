@@ -418,11 +418,12 @@ def get_seeds(graph, att, compdict, alpha):
     
 # graph: {node_id: [node_ids]}. att: {node_id: value}
 # Identify seeds nodes that have higher priorities than their neighbors
-def depth_first_subgraph_detection(graph, att,npss, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15):
+def depth_first_subgraph_detection(graph, att,npss='BJ', radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15):
     if not radius:
         radius = len(graph)
     start_time = time.time()
     subset_score = None
+    # those anomalous p-values
     alphas = set(item[0] for item in att if item[0] != 0 and item[0] < alpha_max)
     alphas = sorted(list(alphas), key = lambda item: item * -1)
     ori_graph = graph

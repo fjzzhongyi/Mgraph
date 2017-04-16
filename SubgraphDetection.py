@@ -4,45 +4,70 @@ import AdditiveScan.AdditiveScan
 import NPHGS.NPHGS
 import Meden.Meden 
 import os,sys
+from pyspark import SparkContext,SparkConf
+sc=SparkContext(appName="subgraghdetection")
 
 def genE(froot):
-	E=[]
-	# f2 a line:  2803301701 3022787727
-	f2=open(os.path.join(froot,'E'),'r')
-		
-	s=f2.readline()
-	while len(s)>0:
-		E.append(s.strip().replace(' ','-'))
+    """
+    E=[]
+    # f2 a line:  2803301701 3022787727
+    f2=open(os.path.join(froot,'E'),'r')
+    s=f2.readline()
+    while len(s)>0:
+        E.append(s.strip().replace(' ','-'))
         s=f2.readline()
-	f2.close()
-	return E
+    f2.close()
+    """
+    # spark
+    text =sc.textFile(os.path.join(froot,'E'))
+    E=text.map(lambda x: x.replace(' ','-')).collect()
+    
+    return E
 
 def genG(froot):
-	graph={}
-	# f2 a line:  2803301701 3022787727
-	f2=open(os.path.join(froot,'G'),'r')
-		
-	s=f2.readline()
-	while len(s)>0:
-		s=s.strip().split(' ')
-		n1=int(s[0])
-		n2=int(s[1])
-		if graph.has_key(n1):
-			if n2 not in graph[n1]:
-				graph[n1].append(n2)
-		else:
-			graph[n1] = [n2]
-		if graph.has_key(n2):
-			if n1 not in graph[n2]:
-				graph[n2].append(n1)
-		else:
-			graph[n2] = [n1]
-		s=f2.readline()
-	f2.close()
-	return graph
+    graph={}
+    """
+    # f2 a line:  2803301701 3022787727
+    f2=open(os.path.join(froot,'G'),'r')
+    s=f2.readline()
+    while len(s)>0:
+        s=s.strip().split(' ')
+        n1=int(s[0])
+        n2=int(s[1])
+        if graph.has_key(n1):
+            if n2 not in graph[n1]:
+                graph[n1].append(n2)
+        else:
+            graph[n1] = [n2]
+        if graph.has_key(n2):
+            if n1 not in graph[n2]:
+                graph[n2].append(n1)
+        else:
+            graph[n2] = [n1]
+        s=f2.readline()
+    f2.close()
+    """
+    # spark
+    text=sc.textFile(os.path.join(froot,'G'))
+    S=text.map(lambda x:x.split(' ')).collect()
+    for s in S:
+        n1=int(s[0])
+        n2=int(s[1])
+        if graph.has_key(n1):
+            if n2 not in graph[n1]:
+                graph[n1].append(n2)
+        else:
+            graph[n1] = [n2]
+        if graph.has_key(n2):
+            if n1 not in graph[n2]:
+                graph[n2].append(n1)
+        else:
+            graph[n2] = [n1]
+    return graph
 
 def genSP(froot,slice):
     # slice starts from 0
+    
     Pvalue=[]
     f=open(os.path.join(froot,'P'),'r')
     s=f.readline()
@@ -102,11 +127,11 @@ if __name__=="__main__":
         for slice in range(0,slices):
             Pvalue=genSP(froot,slice)
             if method==2: 
-                result= DepthFirstScan.DFS.depth_first_subgraph_detection(Graph,Pvalue)
+                result= DepthFirstScan.DFS.depth_first_subgraph_detection(Graph,Pvalue,npss)
             elif method==3:
                 result= AdditiveScan.AdditiveScan.additive_graphscan(Graph,Pvalue,'BJ',Pvalue)
             elif method==4:
-                result = NPHGS.NPHGS.graphscan(Graph, Pvalue)
+                result = NPHGS.NPHGS.graphscan(Graph, Pvalue,alpha_max=0.15)
             Results.append(result[0])
         writeFile(outroot,method,Results)
     
