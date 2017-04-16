@@ -4,8 +4,7 @@ import AdditiveScan.AdditiveScan
 import NPHGS.NPHGS
 import Meden.Meden 
 import os,sys
-from pyspark import SparkContext,SparkConf
-sc=SparkContext(appName="subgraghdetection")
+from pyspark import SparkContext, SparkConf
 
 def genE(froot):
     """
@@ -19,9 +18,10 @@ def genE(froot):
     f2.close()
     """
     # spark
+    sc=SparkContext()
     text =sc.textFile(os.path.join(froot,'E'))
     E=text.map(lambda x: x.replace(' ','-')).collect()
-    
+    sc.stop()
     return E
 
 def genG(froot):
@@ -48,6 +48,7 @@ def genG(froot):
     f2.close()
     """
     # spark
+    sc=SparkContext()
     text=sc.textFile(os.path.join(froot,'G'))
     S=text.map(lambda x:x.split(' ')).collect()
     for s in S:
@@ -63,6 +64,7 @@ def genG(froot):
                 graph[n2].append(n1)
         else:
             graph[n2] = [n1]
+    sc.stop()
     return graph
 
 def genSP(froot,slice):
@@ -127,7 +129,7 @@ if __name__=="__main__":
         for slice in range(0,slices):
             Pvalue=genSP(froot,slice)
             if method==2: 
-                result= DepthFirstScan.DFS.depth_first_subgraph_detection(Graph,Pvalue,npss)
+                result= DepthFirstScan.DFS.depth_first_subgraph_detection(Graph,Pvalue)
             elif method==3:
                 result= AdditiveScan.AdditiveScan.additive_graphscan(Graph,Pvalue,'BJ',Pvalue)
             elif method==4:

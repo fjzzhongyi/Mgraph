@@ -3,6 +3,7 @@ import numpy as np
 import copy
 import os
 import time,sys,datetime
+from pyspark import SparkContext, SparkConf
 
 # Queue simulates a queue
 class Queue:
@@ -33,6 +34,97 @@ def getcont(nid, att, compdict, alpha):
             return 1
         else:
             return 0
+
+
+# what is Route
+class Route:
+    def __init__(self, s = None, graph = None, att = None, nodepri = None, compdict = None, alpha = None):
+        if graph:
+            self.nodepri = nodepri
+            n = len(graph)
+            self.N = n
+            self.graph = graph
+            self.att = att
+            self.incl = dict()
+            self.incl[s] = 1
+            self.excl = dict()
+            # self.bin = [2] * n
+            # self.bin[s] = 1
+            self.path = [s]
+            self.priority = setprioity(self.path, att)
+            self.sidetracks = []
+            self.sin = []
+            self.sins = 0
+            self.souts = 0
+            self.sout = []
+            self.compdict = compdict
+            self.alpha = alpha
+            # self.nodepri =
+        else:
+            self.nodepri = nodepri
+            self.N = 0
+            self.incl = dict()
+            self.excl = dict()
+            # self.bin = []
+            self.path = []
+            self.sidetracks = []
+            self.sin = []
+            self.sout = []
+            self.priority = 0
+            self.graph = None
+            self.att = None
+            self.sins = 0
+            self.souts = 0
+            self.compdict = {}
+            self.alpha = 0.05
+
+
+    def get_current_location(self):
+        return self.path[-1]
+
+
+    def getsubset(self):
+        return self.incl.keys()
+
+
+    def get_neis(self):
+        neis = self.graph[self.get_current_location()]
+        res = []
+        for nei in neis:
+            if not self.incl.has_key(nei) and not self.excl.has_key(nei):
+                if not set(self.graph[nei]).intersection(self.path[:-1]):
+                    res.append(nei)
+        return sorted(res, key=lambda item: self.nodepri[item] * -1)
+
+
+    def getsout(self, nid0):
+        sout = []
+        souts = 0.0
+        Q = []
+        if self.nodepri[nid0] > 0 and self.excl.has_key(nid0):
+            Q.append(nid0)
+        while Q:
+            nid = Q.pop()
+            sout.append(nid)
+            souts += self.nodepri[nid]
+            for nei in [i for i in self.graph[nid] if not self.incl.has_key(i)]:
+                if self.nodepri[nei] > 0 and nei not in Q and nei not in sout:
+                    Q.append(nei)
+            if len(sout) > 5:
+                break
+        return sout, souts
+
+
+    def expand_path(self, idx, neis):
+        nid = neis[idx]
+        self.path.append(nid)
+        self.incl[nid] = 1
+        for nei in neis[:idx]:
+            self.excl[nei] = 1
+        for nei in neis[:idx]:
+            sout, souts = self.getsout(nei)
+            if souts > self.souts:
+                self.souts = souts
 
 # what is Route
 class Route:
@@ -200,12 +292,34 @@ def nodepriority(nid, att, compdict = {}, alpha = 0.05):
     # return -1 * att[nid][0]
 
 def setprioity(subset, att, compdict = {}, alpha=0.05):
-    n = 0
-    for i in subset:
-        if att[i][0] <= alpha:
-            n += getcont(i, att, compdict, alpha)
-        else:
-            n -= 1
+    if len(subset)<=20:
+        n = 0
+        for i in subset:
+            if att[i][0] <= alpha:
+                n += getcont(i, att, compdict, alpha)
+            else:
+                n -= 1
+    else:
+        def spark_getcont(nid):
+            # get the size of nodes comp contains
+            print alpha    
+            if att[nid][0] <= alpha:
+                if compdict.has_key(nid):
+                    return len(compdict[nid])
+                else:
+                    if att[nid][0] <= alpha:
+                        return 1
+                    else:
+                        return 0
+            else:
+                return -1
+        sc=SparkContext()
+        rdd=sc.parallelize(subset)
+        sc.broadcast(att)
+        sc.broadcast(compdict)
+        sc.broadcast(alpha)
+        n=rdd.map(spark_getcont).reduce(lambda a,b:a+b)
+        sc.stop()
     return n
 
 def refine_graph(graph1, att1, alpha):
@@ -328,6 +442,7 @@ def get_seeds(graph, att, compdict, alpha):
 # graph: {node_id: [node_ids]}. att: [[],[],[]]
 # Identify seeds nodes that have higher priorities than their neighbors
 def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15):
+    
     # note: the func need parameter alpha_max, not alpha
     if not radius:
         radius = len(graph)
@@ -406,6 +521,7 @@ def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, 
     else:
         subset_score = [[], 0]
     print subset_score
+
     return subset_score
 
 
