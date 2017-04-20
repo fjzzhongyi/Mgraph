@@ -1,0 +1,16 @@
+#!/usr/bin/python
+import argparse
+import del_empty_node
+
+parser= argparse.ArgumentParser()
+parser.add_argument("Method",choices=['calP','maxCon','delEmpty'],help="choose target method")
+
+parser.add_argument("-G","--srcG",nargs=1,help="your input: path of G file")
+parser.add_argument("-P","--srcP",nargs=1,help="your input: path of P file")
+
+
+args=parser.parse_args()
+print args
+
+if args.Method=='delEmpty':
+    del_useless_node(srcG,srcP)

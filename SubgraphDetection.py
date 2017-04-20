@@ -5,6 +5,8 @@ import NPHGS.NPHGS
 import Meden.Meden 
 import os,sys
 from pyspark import SparkContext, SparkConf
+from measure import *
+
 
 def genE(froot):
     """
@@ -104,6 +106,8 @@ def getSlices(froot):
     return len(s)
 
 if __name__=="__main__":
+    lg=logger()
+    
     # python SubgraphDetection data 1 
     froot = os.path.join(sys.argv[1])
     outroot= os.path.join(sys.argv[1],'output')
@@ -143,7 +147,8 @@ if __name__=="__main__":
         if method==5:
             result = DMGraphScan.dp.DMGraphScan(Graph,Pvalue,verbose=True,input_B=10)
         writeFile(outroot,method,result)
-        
+    
+    print "cpu: %.2f%%; memo: %.2f%%" % (lg.get())
 
 def test():
     Graph = {0: [1,2], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [1,4]}
