@@ -307,7 +307,7 @@ def nodepriority(nid, att, compdict = {}, alpha = 0.05):
 
 # this func return the total number of input subset's abnormal nodes
 def setprioity(subset, att, compdict = {}, alpha=0.05):
-    
+    """ 
     n = 0
     for i in subset:
         if att[i][0] <= alpha:
@@ -316,7 +316,7 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
             n -= 1
     """
     #SPARK
-    if len(subset)<=20:
+    if len(subset)<=50:
         n = 0
         for i in subset:
             if att[i][0] <= alpha:
@@ -344,7 +344,7 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
         sc.broadcast(alpha)
         n=rdd.map(spark_getcont).reduce(lambda a,b:a+b)
         sc.stop()
-    """
+    
     return n
 
 def refine_graph(graph1, att1, alpha):

@@ -10,7 +10,8 @@ from measure import *
 
 
 def genE(froot):
-    
+    """
+    # python version
     E=[]
     # f2 a line:  2803301701 3022787727
     f2=open(os.path.join(froot,'E'),'r')
@@ -25,15 +26,15 @@ def genE(froot):
     text =sc.textFile(os.path.join(froot,'E'))
     E=text.map(lambda x: x.replace(' ','-')).collect()
     sc.stop()
-    """
+    
     return E
 
 
 def genG(froot):
     graph={}
     
-
-    
+    """
+    # python version
     # f2 a line:  2803301701 3022787727
     f2=open(os.path.join(froot,'G'),'r')
     s=f2.readline()
@@ -54,6 +55,7 @@ def genG(froot):
         s=f2.readline()
     f2.close()
     """
+    
     # SPARK version
     sc=SparkContext()
     text=sc.textFile(os.path.join(froot,'G'))
@@ -72,7 +74,7 @@ def genG(froot):
         else:
             graph[n2] = [n1]
     sc.stop()
-    """
+    
 
     return graph
 
