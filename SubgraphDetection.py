@@ -10,7 +10,7 @@ from measure import *
 
 
 def genE(froot):
-    """
+    
     E=[]
     # f2 a line:  2803301701 3022787727
     f2=open(os.path.join(froot,'E'),'r')
@@ -20,16 +20,20 @@ def genE(froot):
         s=f2.readline()
     f2.close()
     """
-    # spark
+    # SPARK version
     sc=SparkContext()
     text =sc.textFile(os.path.join(froot,'E'))
     E=text.map(lambda x: x.replace(' ','-')).collect()
     sc.stop()
+    """
     return E
+
 
 def genG(froot):
     graph={}
-    """
+    
+
+    
     # f2 a line:  2803301701 3022787727
     f2=open(os.path.join(froot,'G'),'r')
     s=f2.readline()
@@ -50,7 +54,7 @@ def genG(froot):
         s=f2.readline()
     f2.close()
     """
-    # spark
+    # SPARK version
     sc=SparkContext()
     text=sc.textFile(os.path.join(froot,'G'))
     S=text.map(lambda x:x.split(' ')).collect()
@@ -68,7 +72,10 @@ def genG(froot):
         else:
             graph[n2] = [n1]
     sc.stop()
+    """
+
     return graph
+
 
 def genSP(froot,slice):
     # slice starts from 0
@@ -151,7 +158,7 @@ if __name__=="__main__":
             result = DMGraphScan.dp.DMGraphScan(Graph,Pvalue,verbose=True,input_B=10)
         writeFile(outroot,method,result)
     
-    print "cpu: %.2f%%; memo: %.2f%%" % (lg.get())
+
 
 def test():
     Graph = {0: [1,2], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [1,4]}

@@ -2,15 +2,12 @@ import time
 import logging    
 import psutil  
 import os  
-import threading
+import thread
 import psutil
 class logger:
     def __init__(self): 
-        self.cpu_per=0
-        self.memo_per=0
-        self.times=0
-        threads=[]
-        t1=threading.Thread(target=self.log)
+        self.file = open('cpu_memo_log','w+')
+        t1=thread.start_new_thread(self.log,())
     def get(self):
         return self.cpu_per,self.memo_per
 
@@ -18,9 +15,7 @@ class logger:
         while True:         
             # get pid  
             p1=psutil.Process(os.getpid())
-            
-            self.cpu_per=cpu=(self.cpu_per*self.times+p1.cpu_percent(None))/float(self.times+1)
-            self.memo_per=memo=(self.memo_per*self.times+p1.memory_percent())/float(self.times+1)
-            self.times+=1
-            print cpu,memo
+            # cpu rss vms
+            self.file.write(str(p1.cpu_percent(interval=0.05))+' '+str(p1.memory_info()[0])+' '+str(p1.memory_info()[1])+'\n')
+            #print cpu,memo
             time.sleep(1)

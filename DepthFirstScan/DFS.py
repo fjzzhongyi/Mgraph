@@ -307,6 +307,15 @@ def nodepriority(nid, att, compdict = {}, alpha = 0.05):
 
 # this func return the total number of input subset's abnormal nodes
 def setprioity(subset, att, compdict = {}, alpha=0.05):
+    
+    n = 0
+    for i in subset:
+        if att[i][0] <= alpha:
+            n += getcont(i, att, compdict, alpha)
+        else:
+            n -= 1
+    """
+    #SPARK
     if len(subset)<=20:
         n = 0
         for i in subset:
@@ -335,6 +344,7 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
         sc.broadcast(alpha)
         n=rdd.map(spark_getcont).reduce(lambda a,b:a+b)
         sc.stop()
+    """
     return n
 
 def refine_graph(graph1, att1, alpha):
@@ -1259,108 +1269,108 @@ def main():
 name_node={}
 num_name={}
 name_num={}
-	
+    
 def genG(froot):
-	print 'genG...'
-	graph={}
-	# f1 one line: 1000432103
-	f1=open(os.path.join(froot,'nodes.dat'),'r')
-	# f2 a line:  2803301701 3022787727
-	f2=open(os.path.join(froot,'edges.dat'),'r')
-	
-	line=0
-	s=f1.readline()
-	while len(s)>0:
-		s=s.strip()
-		name_num[s]=line
-		graph[line]=[]
-		line+=1
-		s=f1.readline()
-		
-	s=f2.readline()
-	while len(s)>0:
-		s=s.strip().split(' ')
-		n1=int(name_num[s[0]])
-		n2=int(name_num[s[1]])
-		if graph.has_key(n1):
-			if n2 not in graph[n1]:
-				graph[n1].append(n2)
-		else:
-			graph[n1] = [n2]
-		if graph.has_key(n2):
-			if n1 not in graph[n2]:
-				graph[n2].append(n1)
-		else:
-			graph[n2] = [n1]
-		s=f2.readline()
-	f1.close()
-	f2.close()
-	return graph
+    print 'genG...'
+    graph={}
+    # f1 one line: 1000432103
+    f1=open(os.path.join(froot,'nodes.dat'),'r')
+    # f2 a line:  2803301701 3022787727
+    f2=open(os.path.join(froot,'edges.dat'),'r')
+    
+    line=0
+    s=f1.readline()
+    while len(s)>0:
+        s=s.strip()
+        name_num[s]=line
+        graph[line]=[]
+        line+=1
+        s=f1.readline()
+        
+    s=f2.readline()
+    while len(s)>0:
+        s=s.strip().split(' ')
+        n1=int(name_num[s[0]])
+        n2=int(name_num[s[1]])
+        if graph.has_key(n1):
+            if n2 not in graph[n1]:
+                graph[n1].append(n2)
+        else:
+            graph[n1] = [n2]
+        if graph.has_key(n2):
+            if n1 not in graph[n2]:
+                graph[n2].append(n1)
+        else:
+            graph[n2] = [n1]
+        s=f2.readline()
+    f1.close()
+    f2.close()
+    return graph
 
 def addPvalue(froot,slice):
-	print 'add_pvalue...'
-	Pvalue=[]
-	f=open(os.path.join(froot,'pvalues.dat'),'r')
-	s=f.readline()
-	while len(s)>0:
-		s=s.strip().split(' ')
-		Pvalue.append([float(s[slice])])
-		s=f.readline()
-	return Pvalue
+    print 'add_pvalue...'
+    Pvalue=[]
+    f=open(os.path.join(froot,'pvalues.dat'),'r')
+    s=f.readline()
+    while len(s)>0:
+        s=s.strip().split(' ')
+        Pvalue.append([float(s[slice])])
+        s=f.readline()
+    return Pvalue
 '''
 def addPvalue(froot,slice):
-	print 'add_pvalue...'
-	Pvalue={}
-	f=open(os.path.join(froot,'pvalues.dat'),'r')
-	line=0
-	s=f.readline()
-	while len(s)>0:
-		s=s.strip().split(' ')
-		Pvalue[str(line)]=float(s[slice])
-		line+=1
-		s=f.readline()
-	#print Pvalue
-	return Pvalue
-	'''
+    print 'add_pvalue...'
+    Pvalue={}
+    f=open(os.path.join(froot,'pvalues.dat'),'r')
+    line=0
+    s=f.readline()
+    while len(s)>0:
+        s=s.strip().split(' ')
+        Pvalue[str(line)]=float(s[slice])
+        line+=1
+        s=f.readline()
+    #print Pvalue
+    return Pvalue
+    '''
 def getSlices(froot):
-	print 'getSlices'
-	f=open(os.path.join(froot,'pvalues.dat'),'r')
-	s=f.readline().strip().split(' ')
-	print 'slices= '+str(len(s)-1)
-	return len(s)
+    print 'getSlices'
+    f=open(os.path.join(froot,'pvalues.dat'),'r')
+    s=f.readline().strip().split(' ')
+    print 'slices= '+str(len(s)-1)
+    return len(s)
 
 if __name__ == "__main__":
-	#unittest()
-	
-	froot = os.path.join(sys.argv[1],'input')
-	outroot= os.path.join(sys.argv[1],'output')
-	npss='BJ'
-	G=genG(froot)
-	slices=getSlices(froot)
-	result=[]
-	
-	startTime = time.time()
-	print 'start processing : '
-	for slice in range(1,slices):
-		print 'slice=' +str(slice)+'...'
-		Pvalue=addPvalue(froot,slice)
-		#print Pvalue
-		#G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
-		#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
-		#print Pvalue
-		subset_score= depth_first_subgraph_detection(G, Pvalue)
-		resultNodes=subset_score[0]
-		score=subset_score[1]
-		result.append((resultNodes,score))
-	runningTime = time.time() - startTime
-	print 'finishing ,duration: '+ str(runningTime)
-	
-	fw=open('DepthFirstScan_'+datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')+'.txt','w+')
-	for each in result:
-		resultNodes=each[0]
-		score=each[1]
-		fw.write(str([str(each) for each in resultNodes]))
-		fw.write('\n')
-		fw.flush()
-	fw.close()
+    #unittest()
+    
+    froot = os.path.join(sys.argv[1],'input')
+    outroot= os.path.join(sys.argv[1],'output')
+    npss='BJ'
+    G=genG(froot)
+    slices=getSlices(froot)
+    result=[]
+    
+    startTime = time.time()
+    print 'start processing : '
+    for slice in range(1,slices):
+        print 'slice=' +str(slice)+'...'
+        Pvalue=addPvalue(froot,slice)
+        #print Pvalue
+        #G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
+        #Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
+        #print Pvalue
+        subset_score= depth_first_subgraph_detection(G, Pvalue)
+        resultNodes=subset_score[0]
+        score=subset_score[1]
+        result.append((resultNodes,score))
+    runningTime = time.time() - startTime
+    print 'finishing ,duration: '+ str(runningTime)
+    
+    fw=open('DepthFirstScan_'+datetime.datetime.now().strftime('_%Y%m%d_%H%M%S')+'.txt','w+')
+    for each in result:
+        resultNodes=each[0]
+        score=each[1]
+        fw.write(str([str(each) for each in resultNodes]))
+        fw.write('\n')
+        fw.flush()
+    fw.close()
 
