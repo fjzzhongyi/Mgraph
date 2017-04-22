@@ -3,6 +3,7 @@ import DepthFirstScan.DFS
 import AdditiveScan.AdditiveScan
 import NPHGS.NPHGS
 import Meden.Meden 
+import EventTree.EventTree
 import os,sys
 from pyspark import SparkContext, SparkConf
 from measure import *
@@ -117,14 +118,16 @@ if __name__=="__main__":
     #slice starts from 0
 
     method = int(sys.argv[2])
-    # 1 DMGraphScan 
-    # 2 3 4 DFS Addi NPHGS
+    # 1 DMGraphScan  6 EventTree 
+    # 2 DFS  3 Addi  4 NPHGS
     # 5 Meden
-    if method in [1]:
+    if method in [1,6]:
         Graph=genG(froot)
         Pvalue=genP(froot)
         if method==1:
             result = DMGraphScan.dp.DMGraphScan(Graph,Pvalue,verbose=True,input_B=10)
+        elif method==6:
+            result = EventTree.EventTree.detection(Graph,Pvalue,alpha_max=0.15)
         writeFile(outroot,method,result)
     
     elif method in [2,3,4]:
@@ -159,14 +162,14 @@ def test():
     print "\nNPHGS result"
     print result
 
-    result = DMGraphScan.dp.DMGraphScan(Graph,Pvalue,verbose=True,input_B=10)
-    print "\nDMGraphScan result"
-    print result
-
     result= DepthFirstScan.DFS.depth_first_subgraph_detection(Graph,Pvalue)
     print "\nDFS result"
     print result
 
+    result= EventTree.EventTree.detection(Graph,Pvalue)
+    print "\nEventTree result"
+    print result,'\n'
+    
     result= AdditiveScan.AdditiveScan.additive_graphscan(Graph,Pvalue,'BJ',Pvalue)
     print "\nAdditiveScan result"
     print result

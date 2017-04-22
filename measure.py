@@ -19,7 +19,8 @@ class logger:
             # get pid  
             p1=psutil.Process(os.getpid())
             
-            self.cpu_per=(self.cpu_per*self.times+p1.cpu_percent(None))/float(self.times+1)
-            self.memo_per=(self.memo_per*self.times+p1.memory_percent())/float(self.times+1)
+            self.cpu_per=cpu=(self.cpu_per*self.times+p1.cpu_percent(None))/float(self.times+1)
+            self.memo_per=memo=(self.memo_per*self.times+p1.memory_percent())/float(self.times+1)
             self.times+=1
-            time.sleep(3)
+            print cpu,memo
+            time.sleep(1)
