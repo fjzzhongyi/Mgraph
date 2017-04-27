@@ -7,7 +7,7 @@ import EventTree.EventTree
 import os,sys
 from pyspark import SparkContext, SparkConf
 from measure import *
-
+from sparkcontext import *
 
 def genE(froot):
     """
@@ -22,10 +22,9 @@ def genE(froot):
     f2.close()
     """
     # SPARK version
-    sc=SparkContext()
+    global sc
     text =sc.textFile(os.path.join(froot,'E'))
     E=text.map(lambda x: x.replace(' ','-')).collect()
-    sc.stop()
     
     return E
 
@@ -57,7 +56,7 @@ def genG(froot):
     """
     
     # SPARK version
-    sc=SparkContext()
+    global sc
     text=sc.textFile(os.path.join(froot,'G'))
     S=text.map(lambda x:x.split(' ')).collect()
     for s in S:
@@ -73,7 +72,6 @@ def genG(froot):
                 graph[n2].append(n1)
         else:
             graph[n2] = [n1]
-    sc.stop()
     
 
     return graph

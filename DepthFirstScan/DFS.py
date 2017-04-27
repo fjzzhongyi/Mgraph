@@ -337,13 +337,12 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
                         return 0
             else:
                 return -1
-        sc=SparkContext()
+        global sc
         rdd=sc.parallelize(subset)
         sc.broadcast(att)
         sc.broadcast(compdict)
         sc.broadcast(alpha)
         n=rdd.map(spark_getcont).reduce(lambda a,b:a+b)
-        sc.stop()
     
     return n
 

@@ -11,6 +11,8 @@ import time
 import npssScore as npssS
 import networkx as nx
 from pyspark import SparkContext,SparkConf
+sys.path.append("..")
+from sparkcontext import *
 
 name_node={}
 num_name={}
@@ -58,7 +60,7 @@ def detection(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, 
     
     
     
-    # SPARk VERSION
+    # SPARK VERSION
     def spark_proc(k):    
         initNodeID = V[k][0]
         initNodePvalue = V[k][1] 
@@ -94,11 +96,12 @@ def detection(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, 
                 print 'S : ',[item for item in S]
                 print 'maxS : ',[item[0] for item in maxS]
         return [sorted(maxS, key = lambda item: item[0]), max_npss_score]# subgraphs and score
-    sc=SparkContext(appName="NPHGS")
+    #sc=SparkContext(appName="NPHGS")
+    global sc
     sc.broadcast(V)
     S_STAR= sc.parallelize(range(K)).map(spark_proc).collect()
     S_STAR = sorted(S_STAR, key=lambda xx:xx[1])
-    sc.stop()
+    #sc.stop()
     
     if verbose_level != 0:
         for item in S_STAR:

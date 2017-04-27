@@ -9,7 +9,7 @@ pieces=3, number = 2
 (0,2,0)
 (2,0,0)
 """
-
+# this func deploys thread, this may not speed up the program
 def genlist1 (pieces, number): 
     if (pieces,number) in solutionlists:
         return solutionlists[(pieces,number)]
