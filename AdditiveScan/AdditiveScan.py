@@ -10,6 +10,8 @@ import multiprocessing
 import time
 import networkx as nx
 from scipy.stats import norm
+sys.path.append("..")
+from sparkcontext import *
 
 class Consumer(multiprocessing.Process):
 
@@ -238,7 +240,8 @@ def additive_graphscan(graph, att, npss='BJ', iterations_bound=10, ncores=8, min
     sstar = None
     sfscore = None
     salpha = None
-    for alpha in alphas[:]:
+    def spark_proc(alpha):    
+        # INPUT: alpha, ori_att, ori_graph
         print 'processing alpha : ',alpha,' ; start to execute additive scan'
         att1 = [ 1 if pvalue[0] <= alpha else -1 for pvalue in ori_att]
         graph, att1, compdict = refine_graph(ori_graph, att1, alpha)#compdict component dictionary
@@ -246,10 +249,16 @@ def additive_graphscan(graph, att, npss='BJ', iterations_bound=10, ncores=8, min
         print '# cores : ',ncores
         alpha_sstar, alpha_sfscore =  \
         additive_graphscan_proc(graph, att1,npss,globalPValue, compdict, alpha, iterations_bound, ncores, minutes)
-        if alpha_sfscore and (sstar == None or sfscore < alpha_sfscore):
-            sfscore = alpha_sfscore
-            sstar = alpha_sstar
-            salpha = alpha
+        return (alpha,(alpha_sstar,alpha_sfscore))
+    global sc
+    sc.broadcast(ori_att)
+    sc.broadcast(ori_graph)
+    result=sc.parallelize(alphas)\
+            .map(spark_proc)\
+            .reduce(lambda a,b: a if a[1][1]>b[1][1] else b)
+    salpha=result[0]
+    sstar=result[1][0]
+    sfscore=result[1][1]
     return [sstar, sfscore, salpha]
      
 def recover_subgraph(compdict, sstar):
