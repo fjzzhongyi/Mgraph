@@ -5,6 +5,22 @@ import os
 import time,sys,datetime
 from pyspark import SparkContext, SparkConf
 
+sc=None
+def sc_start(app):
+    global sc
+    sc=SparkContext(appName=app)
+def sc_stop():
+    global sc
+    sc.stop()
+
+def sc_wrap(func):
+    def wrapper(*args,**kwargs):
+        sc_start("DFS")
+        ret=func(*args,**kwargs)
+        sc_stop()
+        return ret
+    return wrapper
+
 # Queue simulates a queue
 class Queue:
     def __init__(self, item = None):
@@ -466,7 +482,8 @@ def get_seeds(graph, att, compdict, alpha):
     
 # graph: {node_id: [node_ids]}. att: [[],[],[]]
 # Identify seeds nodes that have higher priorities than their neighbors
-def depth_first_subgraph_detection(graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15):
+@sc_wrap
+def GraphScan(graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15):
     
     # note: the func need parameter alpha_max, not alpha
     if not radius:

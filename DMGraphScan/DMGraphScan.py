@@ -1,4 +1,4 @@
-from vertex import leaf,nonleaf
+from vertex import leaf,nonleaf,sc,sc_start,sc_stop
 from node import Node
 from ksubgraph import ISTG
 import os,datetime,threading,itertools,sys
@@ -174,13 +174,40 @@ def dp(Graph=None,Pvalue=None,fileinput=True,verbose=False):
         # assuming that this program is not run in segments
         return [[int(node.name) for node in each] for each in root.omega[-1]]
 
-def DMGraphScan(Graph,Pvalue,alpha_max=0.15,input_B=2,verbose=False):
+def sc_wrap(func):
+    def wrapper(*args,**kwargs):
+        sc_start("DMGraphScan") 
+        ret=func(*args,**kwargs)
+        sc_stop()
+        return ret
+    return wrapper
+
+@sc_wrap
+def GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=0.15,input_B=2,verbose=False):
+    Graph,Pvalue=RDDdec(Graph_RDD,Pvalue_RDD)
     gv.B=input_B
     # segment should not play its role in this Function, supposing that input size is not so huge. so no need for cut them into segments
     
     # !!!! alpha is constant, needed modification
     gv.segment=len(Pvalue[0])
     return dp(Graph,Pvalue,fileinput=False,verbose=verbose)
+
+def RDDdec(Graph_RDD,Pvalue_RDD):
+
+#Graph   FOR nodewise: connections (nodeNo., [connected nodes]) / (int, [int,int,...])
+#       FOR edgewise: (edgeNo. , (nodeA, nodeB))
+#Pvalue  (node,valuelist) / (int,[float,...])
+#
+#Graph   FOR:  nodewise   {0:[],1:[],2:[]} node start from zero 0
+#        FOR:  edgewise   [edge1, edge2, edge3, ...]     edge%n: str   format like  "1-2"
+#Pvalue = [[],[],[],[],[]] which is corresponding with node by index
+    Graph={}
+    for ele in Graph_RDD.collect():
+        Graph[ele[0]]=ele[1]
+    Pvalue=\
+    [ele[1] for ele in sorted(Pvalue_RDD.collect(),key=lambda x: x[0])]
+    print Graph,Pvalue
+    return Graph,Pvalue
 
 if __name__=='__main__':
 

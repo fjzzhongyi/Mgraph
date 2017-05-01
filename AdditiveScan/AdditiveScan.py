@@ -10,8 +10,23 @@ import multiprocessing
 import time
 import networkx as nx
 from scipy.stats import norm
-sys.path.append("..")
-from sparkcontext import *
+
+
+sc=None
+def sc_start(app):
+    global sc
+    sc=SparkContext(appName=app)
+def sc_stop():
+    global sc
+    sc.stop()
+
+def sc_wrap(func):
+    def wrapper(*args,**kwargs):
+        sc_start("AdditiveScan")
+        ret=func(*args,**kwargs)
+        sc_stop()
+        return ret
+    return wrapper
 
 class Consumer(multiprocessing.Process):
 
@@ -230,8 +245,8 @@ def refine_graph(graph1, att1, alpha):
         compdict[n] = comp
         n += 1
     return graph, att, compdict
-
-def additive_graphscan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30):
+@sc_wrap
+def GraphScan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30):
     globalPValue=att
     ori_graph = graph
     ori_att = att

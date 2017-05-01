@@ -1,39 +1,53 @@
 STANDARD FORMAT:
-    Graph = {0:[],1:[],2:[]} node start from zero 0
+    Graph   FOR:  nodewise   {0:[],1:[],2:[]} node start from zero 0
+            FOR:  edgewise   [edge1, edge2, edge3, ...]     edge%n: str   format like  "1-2"
     Pvalue = [[],[],[],[],[]] which is corresponding with node by index
     E = ['0-1','0-2',...'n-m']
     Result = [[1,33],[2,4,6],...]
+
+
+RDD based:
+    Graph   FOR nodewise: connections (nodeNo., [connected nodes]) / (int, [int,int,...])
+            FOR edgewise: (edgeNo. , (nodeA, nodeB))
+    Pvalue  (node,valuelist) / (int,[float,...])
+Refine
+
+
 !!MENTION!!
 As for AdditiveScan and DFS algorithm, pvalue should bigger than 0!! 
 
 NPHGS/NPHGS.py: static
-resultNodes,score=graphscan(Graph, Pvalue, alpha_max='0.15', npss='BJ', verbose_level = 0)
+resultNodes,score=GraphScan(Graph, Pvalue, alpha_max='0.15', npss='BJ', verbose_level = 0)
 resultNodes is list of nodes
 score reflects the result score
 verbose_level!=0: print information
 
-DMGraphScan/dp.py:  dynamic
-resultNodes = DMGraphScan(Graph, Pvalue, alpha_max=0.15, input_B=2)
+DMGraphScan/DMGraphScan.py:  dynamic
+resultNodes = GraphScan(Graph, Pvalue, alpha_max=0.15, input_B=2)
 
 DepthFirstScan/DFS.py: static 
-resultNodes, score = depth_first_subgraph_detection (graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15)
+resultNodes, score = GraphScan(graph, att, radius = 7, anomaly_ratio = 0.5, minutes = 30, alpha_max = 0.15)
 graph = {int:[int]}
 att = [[float], ...]
 	#G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
 	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
 
-AdditiveScan/AdditiveScan_Traffic.py static
-def additive_graphscan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30)
+AdditiveScan/AdditiveScan.py static
+GraphScan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30)
 graph = {int:[int]}
 att/globalPValue = [[float], ...]
 	#G = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
 	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
 npss='BJ'
 
+EventTree/EventTree.py static
+def GraphScan(Graph,Pvalue,alpha_max=0.15)
+	#Graph = {0: [1], 1: [0, 2], 2: [1, 3], 3: [2, 4], 4: [3, 5], 5: [4]}
+	#Pvalue = [[0.05], [0.16], [0.16], [0.16], [0.16], [0.05]]
 
 define another case:
     Edge has its own pvalue, but vertex hasn't.
-    Graph [edge1, edge2, edge3, ]
+    Graph [edge1, edge2, edge3, ]            
             edge%n: str   format like  "1-2"
     Pvalue [[float, ],[],[],[]...]
     result [[edge1,edge2,...],[]...]
@@ -41,7 +55,7 @@ define another case:
     Pvalue=[[0.1,0.2],[0.1,0.1],[0.1,0.4],[0.3,0.1],[0.4,0.4],[0.5,0.1],[0.05,0.1],[0.3,0.14]]
 
 Meden/Meden.py dynamic
-result= detection(E,Pvalue,alpha_max=0.15)
+result= GraphScan(E,Pvalue,alpha_max=0.15)
 THIS method is designed for graph whose edges have pvalues but nodes haven't
 
 

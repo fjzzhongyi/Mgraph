@@ -1,6 +1,6 @@
 import commands
 import sys,os,re
-def detection(Graph,Pvalue,alpha_max=0.15):
+def GraphScan(Graph,Pvalue,alpha_max=0.15):
     #Graph [edge1, edge2, edge3, ]
     #         edge%n: str   format like  "1_2"
     #Pvalue [[float, ],[],[],[]...]

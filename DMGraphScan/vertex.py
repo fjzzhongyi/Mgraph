@@ -1,8 +1,14 @@
 import GV,math,itertools
 import solutionlist,gc
-import sys
-sys.path.append("..")
-from sparkcontext import *
+import sys,time
+from pyspark import SparkContext
+sc=None
+def sc_start(app):
+    global sc
+    sc=SparkContext(appName=app)
+def sc_stop():
+    global sc
+    sc.stop()
 
 def extend(ori, root, target):
     if len(ori)==0 and root is None:
@@ -14,6 +20,33 @@ def extend(ori, root, target):
         on=on.parent
     return result
 
+
+def nll_enc(nll):
+    re=[]
+    for nodeset in nll:
+        re.append(set([node.name for node in nodeset]))
+    return re
+def nll_dec(nll):
+    re=[]
+    for nameset in nll:
+        re.append(set([GV.name_node[nodename] for nodename in nameset]))
+    return re
+def rll_enc(rll):
+    re=[]
+    for node in rll:
+        if node is None:
+            re.append(None)
+        else:
+            re.append(node.name)
+    return re
+def rll_dec(rll):
+    re=[]
+    for nodename in rll:
+        if nodename is None:
+            re.append(None)
+        else:
+            re.append(GV.name_node[nodename])
+    return re
 
 def psi (input):
     # input: set of nodes in time GV.gv.slices
@@ -44,22 +77,22 @@ def psi (input):
     
     return BJ(GV.alpha,N_a,N)
             
-def psi4nonleaf (input):
-    # input: list of 0/1   e.g. (0,1,0,0,1,1)
-    def BJ(alpha, N_a, N):
-        if N == 0:
-            return 0
-        aa = N_a * 1.0 / N
-        bb = alpha
-        EPS=10**-6
-        return N * (aa*math.log((aa/bb)+EPS) + (1-aa)*math.log(((1-aa)/(1-bb))+EPS))
-    # N_a:number of common anomalous nodes    N: total number of nodes 
-    N=N_a=sum(input) 
-    return BJ(GV.alpha,N_a,N)
 
 # calc evert vertex's omega
 def leaf(node):
     node.Nroot=[[None for i in range(GV.gv.slices)] for j in range(GV.gv.B+1)]
+    def psi4nonleaf (input):
+        # input: list of 0/1   e.g. (0,1,0,0,1,1)
+        def BJ(alpha, N_a, N):
+            if N == 0:
+                return 0
+            aa = N_a * 1.0 / N
+            bb = alpha
+            EPS=10**-6
+            return N * (aa*math.log((aa/bb)+EPS) + (1-aa)*math.log(((1-aa)/(1-bb))+EPS))
+        # N_a:number of common anomalous nodes    N: total number of nodes 
+        N=N_a=sum(input) 
+        return BJ(alpha_b.value,N_a,N)
     def combine (valuelist, alp):
         # this function can produce possible combinations of (E1, E2, E3, ^^ , En), using (0/1, 0/1, 0/1, ^^, 0/1)
         # another way to produce these is to utilize built-in modules itertools
@@ -94,15 +127,19 @@ def leaf(node):
         return (delta,each)
     
     # SPARK version
+    t1=time.time()
     global sc
-    sc.broadcast(GV.alpha)
-    sc.broadcast(GV.gv.B)
+    alpha_b=sc.broadcast(GV.alpha)
+    B_b=sc.broadcast(GV.gv.B)
+    
     new_lists=sc.parallelize(combinelists)\
             .map(calc)\
-            .filter(lambda x: x[0]<=GV.gv.B)\
+            .filter(lambda x: True if x[0]<=B_b.value else False)\
             .map(lambda x: (x[0],(x[1],psi4nonleaf(x[1]))))\
             .reduceByKey(lambda a,b: a if a[1]>b[1] else b)\
             .collect()
+    t2=time.time()
+    print "leaf  Time: %f" %(t2-t1)
     for each in new_lists:
         # each Format: (delta, (list, psi))
         def transform(lis):
@@ -181,11 +218,11 @@ def nonleaf(node):
     def spark_search(e):
         # e: [0,3,4,1,0,0,...]
         #method1: try all connected 
-        tl=[set() for i in range(GV.gv.slices)]
-        for i in range(GV.gv.slices):
-            for j in range(len(nodes)):
-                tl[i]|=extend(nodes[j].omega[e[j]][i],nodes[j].Nroot[e[j]][i],node)
-            tl[i].add(node)
+        tl=[set() for i in range(gv_b.value.slices)]
+        for i in range(gv_b.value.slices):
+            for j in range(len(nodes_b.value)):
+                tl[i]|=extend(nodes_b.value[j].omega[e[j]][i],nodes_b.value[j].Nroot[e[j]][i],node_b.value)
+            tl[i].add(node_b.value)
         def judgeConnect(l):
             #each is a set of node objects
             for each in l:
@@ -214,30 +251,48 @@ def nonleaf(node):
         # default
         countN=cN
         nll=tl
-        rll=[node for i in range(GV.gv.slices)]
+        rll=[node_b.value for i in range(gv_b.value.slices)]
         
         #method2: reserve max BJ of child tree, first of all, find markNode
-        for j in range(len(nodes)):
-            cN=nodes[j].BJ[e[j]]
+        for j in range(len(nodes_b.value)):
+            cN=nodes_b.value[j].BJ[e[j]]
             if countN< cN:
                 countN=cN
-                nll=nodes[j].omega[e[j]]
-                rll=nodes[j].Nroot[e[j]]
-        return (sum(e),(countN,nll,rll))
-    
+                nll=nodes_b.value[j].omega[e[j]]
+                rll=nodes_b.value[j].Nroot[e[j]]
+        
+        # nll, rll should be
+        return (sum(e),(countN,nll_enc(nll),rll_enc(rll)))
+
     # SPARK version
     # maybe genlist could be calc by spark
-
+    
+    t1=time.time()
     global sc
-    sc.broadcast(node)
-    sc.broadcast(nodes)
-    sc.broadcast(GV.gv) 
+    node_b=sc.broadcast(node)
+    nodes_b=sc.broadcast(nodes)
+    gv_b=sc.broadcast(GV.gv) 
     # spark_result format []  each element: (B,(psi,nll,rll))
-    spark_result = sc.parallelize(range(0,GV.gv.B+1))\
+    """
+    spark_result = sorted(\
+        sc.parallelize(range(0,gv_b.value.B+1))\
         .flatMap(genlist)\
         .map(spark_search)\
         .reduceByKey(lambda a,b:a if a[0]>b[0] else b)\
-        .sortByKey().collect()
+        .collect(),key=lambda x:x[0])
+    """
+    result = \
+        sc.parallelize(range(0,gv_b.value.B+1))\
+        .flatMap(genlist)\
+        .map(spark_search)\
+        .collect()
+    t2=time.time()
+    print "length of nodes %d ;  time: %f" %(len(nodes),t2-t1)
+
+    spark_result={}
+    for each in result:
+        if (each[0] not in spark_result) or (each[0] in spark_result and each[1][0]> spark_result[each[0]][0]):
+            spark_result[each[0]]=each[1]
     """
     #e:[0,1,0,0,3] each in li
     sc.parallelize(li)\
@@ -260,11 +315,11 @@ def nonleaf(node):
             nll=nl[Nlist[:number].index(max(Nlist[:number]))]
             rll=RootList[Nlist[:number].index(max(Nlist[:number]))]
         
-        cN=spark_result[number][1][0] 
+        cN=spark_result[number][0] 
         if cN>countN:
             countN=cN
-            nll=spark_result[number][1][1]
-            rll=spark_result[number][1][2]
+            nll=nll_dec(spark_result[number][1])
+            rll=rll_dec(spark_result[number][2])
         
         nl[number]=nll
         Nlist[number]=countN

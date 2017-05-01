@@ -1,7 +1,7 @@
 import commands
 import sys,os,re
 
-def detection(Graph,Pvalue,alpha_max=0.15):
+def GraphScan(Graph,Pvalue,alpha_max=0.15):
     #Graph {0:[1,2],...}
     #Pvalue=[[],[],[]]
     filepath= os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))

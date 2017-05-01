@@ -11,13 +11,27 @@ import time
 import npssScore as npssS
 import networkx as nx
 from pyspark import SparkContext,SparkConf
-sys.path.append("..")
-from sparkcontext import *
+
+sc=None
+def sc_start(app):
+    global sc
+    sc=SparkContext(appName=app)
+def sc_stop():
+    global sc
+    sc.stop()
+
+def sc_wrap(func):
+    def wrapper(*args,**kwargs):
+        sc_start("NPHGS")
+        ret=func(*args,**kwargs)
+        sc_stop()
+        return ret
+    return wrapper
 
 name_node={}
 num_name={}
-
-def detection(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, network,alpha
+@sc_wrap
+def GraphScan(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, network,alpha
 
     if verbose_level == 2:
         print 'PValue : ',PValue # is a dictionary, i:p-valuei

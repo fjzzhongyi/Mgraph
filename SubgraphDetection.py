@@ -1,4 +1,4 @@
-import DMGraphScan.dp
+import DMGraphScan.DMGraphScan
 import DepthFirstScan.DFS
 import AdditiveScan.AdditiveScan
 import NPHGS.NPHGS
@@ -7,8 +7,24 @@ import EventTree.EventTree
 import os,sys
 from pyspark import SparkContext, SparkConf
 from measure import *
-from sparkcontext import *
 
+sc=None
+def sc_start(app):
+    global sc
+    sc=SparkContext(appName=app)
+def sc_stop():
+    global sc
+    sc.stop()
+
+def sc_wrap(func):
+    def wrapper(*args,**kwargs):
+        sc_start("SubgraphScan")
+        ret=func(*args,**kwargs)
+        sc_stop()
+        return ret
+    return wrapper
+
+@sc_wrap
 def genE(froot):
     """
     # python version
@@ -28,9 +44,8 @@ def genE(froot):
     
     return E
 
-
+@sc_wrap
 def genG(froot):
-    graph={}
     
     """
     # python version
@@ -54,11 +69,13 @@ def genG(froot):
         s=f2.readline()
     f2.close()
     """
-    
+     
     # SPARK version
     global sc
     text=sc.textFile(os.path.join(froot,'G'))
     S=text.map(lambda x:x.split(' ')).collect()
+    #use map reduce
+    ?
     for s in S:
         n1=int(s[0])
         n2=int(s[1])
@@ -132,7 +149,7 @@ if __name__=="__main__":
         Graph=genG(froot)
         Pvalue=genP(froot)
         if method==1:
-            result = DMGraphScan.dp.DMGraphScan(Graph,Pvalue,verbose=True,input_B=10)
+            result = DMGraphScan.DMGraphScan.GraphScan(Graph,Pvalue,verbose=True,input_B=10)
         elif method==6:
             result = EventTree.EventTree.detection(Graph,Pvalue,alpha_max=0.15)
         writeFile(outroot,method,result)
