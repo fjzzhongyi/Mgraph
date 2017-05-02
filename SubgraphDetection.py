@@ -138,7 +138,7 @@ if __name__=="__main__":
             if method==2: 
                 result= DepthFirstScan.DFS.depth_first_subgraph_detection(Graph,Pvalue)
             elif method==3:
-                result= AdditiveScan.AdditiveScan.additive_graphscan(Graph,Pvalue,'BJ',Pvalue)
+                result= AdditiveScan.AdditiveScan.GraphScan(Graph,Pvalue,npss='BJ')
             elif method==4:
                 result = NPHGS.NPHGS.GraphScan(Graph, Pvalue,alpha_max=0.15)
             Results=Results.union(result)

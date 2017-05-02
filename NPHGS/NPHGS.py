@@ -13,13 +13,13 @@ import networkx as nx
 from pyspark import SparkContext,SparkConf
 
 sc=None
-def sc_start(app):
+def sc_start():
     global sc
     sc=SparkContext.getOrCreate()
 
 def sc_wrap(func):
     def wrapper(*args,**kwargs):
-        sc_start("NPHGS")
+        sc_start()
         ret=func(*args,**kwargs)
         return ret
     return wrapper

@@ -10,23 +10,33 @@ import multiprocessing
 import time
 import networkx as nx
 from scipy.stats import norm
-
+from pyspark import SparkContext
 
 sc=None
-def sc_start(app):
+def sc_start():
     global sc
-    sc=SparkContext(appName=app)
-def sc_stop():
-    global sc
-    sc.stop()
+    sc=SparkContext.getOrCreate()
 
 def sc_wrap(func):
     def wrapper(*args,**kwargs):
-        sc_start("AdditiveScan")
+        sc_start()
         ret=func(*args,**kwargs)
-        sc_stop()
         return ret
     return wrapper
+def RDDdec(Graph_RDD,Pvalue_RDD):
+    Graph={}
+    for ele in Graph_RDD.collect():
+        Graph[ele[0]]=ele[1]
+    Pvalue=\
+    [ele[1] for ele in sorted(Pvalue_RDD.collect(),key=lambda x: x[0])]
+    return Graph,Pvalue
+def SubgraphEnc(subgraphs):
+    global sc
+    if len(subgraphs)==0 or not isinstance(subgraphs[0],list):
+        reRDD=sc.parallelize([subgraphs])
+    else:
+        reRDD=sc.parallelize([(index,subgraph)for index,subgraph in enumerate(subgraphs)])
+    return reRDD
 
 class Consumer(multiprocessing.Process):
 
@@ -246,7 +256,9 @@ def refine_graph(graph1, att1, alpha):
         n += 1
     return graph, att, compdict
 @sc_wrap
-def GraphScan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30):
+def GraphScan(Graph_RDD, Pvalue_RDD, npss='BJ', iterations_bound=10, ncores=8, minutes=30):
+    
+    graph, att=RDDdec(Graph_RDD, Pvalue_RDD)
     globalPValue=att
     ori_graph = graph
     ori_att = att
@@ -257,24 +269,24 @@ def GraphScan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30):
     salpha = None
     def spark_proc(alpha):    
         # INPUT: alpha, ori_att_b.value, ori_graph_b.value
-        print 'processing alpha : ',alpha,' ; start to execute additive scan'
         att1 = [ 1 if pvalue[0] <= alpha else -1 for pvalue in ori_att_b.value]
-        graph, att1, compdict = refine_graph(ori_graph_b.value, att1, alpha)#compdict component dictionary
-        print '# connected components: ', len(compdict)
-        print '# cores : ',ncores
+        graph1, att1, compdict = refine_graph(ori_graph_b.value, att1, alpha)#compdict component dictionary
+        print "dsfsdf"
         alpha_sstar, alpha_sfscore =  \
-        additive_graphscan_proc(graph, att1,npss,globalPValue, compdict, alpha, iterations_bound, ncores, minutes)
+        additive_graphscan_proc(graph1, att1,npss,globalPValue_b.value, compdict, alpha, iterations_bound, ncores, minutes)
         return (alpha,(alpha_sstar,alpha_sfscore))
     global sc
     ori_att_b=sc.broadcast(ori_att)
     ori_graph_b=sc.broadcast(ori_graph)
+    globalPValue_b=sc.broadcast(globalPValue)
     result=sc.parallelize(alphas)\
-            .map(spark_proc)\
-            .reduce(lambda a,b: a if a[1][1]>b[1][1] else b)
+             .map(spark_proc)\
+             .reduce(lambda a,b: a if a[1][1]>b[1][1] else b)
+
     salpha=result[0]
     sstar=result[1][0]
     sfscore=result[1][1]
-    return [sstar, sfscore, salpha]
+    return SubgraphEnc(sstar)
      
 def recover_subgraph(compdict, sstar):
     if sstar:
