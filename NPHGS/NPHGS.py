@@ -15,23 +15,32 @@ from pyspark import SparkContext,SparkConf
 sc=None
 def sc_start(app):
     global sc
-    sc=SparkContext(appName=app)
-def sc_stop():
-    global sc
-    sc.stop()
+    sc=SparkContext.getOrCreate()
 
 def sc_wrap(func):
     def wrapper(*args,**kwargs):
         sc_start("NPHGS")
         ret=func(*args,**kwargs)
-        sc_stop()
         return ret
     return wrapper
+def RDDdec(Graph_RDD,Pvalue_RDD):
+    Graph={}
+    for ele in Graph_RDD.collect():
+        Graph[ele[0]]=ele[1]
+    Pvalue=\
+    [ele[1] for ele in sorted(Pvalue_RDD.collect(),key=lambda x: x[0])]
+    return Graph,Pvalue
+def SubgraphEnc(subgraphs):
+    global sc
+    if len(subgraphs)==0 or not isinstance(subgraphs[0],list):
+        reRDD=sc.parallelize([subgraphs])
+    else:
+        reRDD=sc.parallelize([(index,subgraph)for index,subgraph in enumerate(subgraphs)])
+    return reRDD
 
 name_node={}
 num_name={}
-@sc_wrap
-def GraphScan(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, network,alpha
+def detection(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, network,alpha
 
     if verbose_level == 2:
         print 'PValue : ',PValue # is a dictionary, i:p-valuei
@@ -76,8 +85,8 @@ def GraphScan(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, 
     
     # SPARK VERSION
     def spark_proc(k):    
-        initNodeID = V[k][0]
-        initNodePvalue = V[k][1] 
+        initNodeID = V_b.value[k][0]
+        initNodePvalue = V_b.value[k][1] 
         S = {initNodeID:initNodePvalue} #{nid:pvalue}
         max_npss_score = npssS.npss_score([[item, S[item]] for item in S], alpha_max, npss)
         maxS = [[initNodeID, initNodePvalue]]
@@ -112,8 +121,10 @@ def GraphScan(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, 
         return [sorted(maxS, key = lambda item: item[0]), max_npss_score]# subgraphs and score
     #sc=SparkContext(appName="NPHGS")
     global sc
-    sc.broadcast(V)
-    S_STAR= sc.parallelize(range(K)).map(spark_proc).collect()
+    V_b=sc.broadcast(V)
+    S_STAR= sc.parallelize(range(K))\
+              .map(spark_proc)\
+              .collect()
     S_STAR = sorted(S_STAR, key=lambda xx:xx[1])
     #sc.stop()
     
@@ -123,7 +134,7 @@ def GraphScan(PValue, E, alpha_max=0.15, npss='BJ', verbose_level = 0):#pvalue, 
     '''return the maximum npss value '''
     if len(S_STAR) > 0:
         subGraph  = S_STAR[len(S_STAR)-1]
-        return [item[0] for item in subGraph[0]] , subGraph[1]
+        return [item[0] for item in subGraph[0]]
     else:
         print 'kddgreedy fails, check the error'
         sys.exit()
@@ -174,8 +185,9 @@ def getSlices(froot):
     f.close()
     return len(s)
 
-def graphscan(Graph, Pvalue, alpha_max=0.15, npss='BJ',verbose_level=0):
-    
+@sc_wrap
+def GraphScan(Graph_RDD, Pvalue_RDD, alpha_max=0.15, npss='BJ',verbose_level=0):
+    Graph,Pvalue=RDDdec(Graph_RDD,Pvalue_RDD)
     #Pvalue={int:float, ...}  1:1.00
     #E={str:int}  {"12_13":1.0}   str=name1+'_'+name2
     # TRANSFORM Graph, Pvalue --->>> E, Pvalue
@@ -187,7 +199,7 @@ def graphscan(Graph, Pvalue, alpha_max=0.15, npss='BJ',verbose_level=0):
     for index in range(len(Pvalue)):
         P[index]=float(Pvalue[index][0])
     
-    return detection(P, E, alpha_max=alpha_max,npss=npss,verbose_level=verbose_level)
+    return SubgraphEnc(detection(P, E, alpha_max=alpha_max,npss=npss,verbose_level=verbose_level))
         
 if __name__ =='__main__':
     froot = os.path.join(sys.argv[1],'input')

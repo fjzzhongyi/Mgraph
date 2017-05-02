@@ -11,15 +11,14 @@ RDD based:
             FOR edgewise: (edgeNo. , (nodeA, nodeB))
     Pvalue  (node,valuelist) / (int,[float,...])
 Refine
-
-
+    Result  static: nodelist 
+            dynamic: (index,nodelist) / (int,[int,int,int,...]) 
 !!MENTION!!
 As for AdditiveScan and DFS algorithm, pvalue should bigger than 0!! 
 
 NPHGS/NPHGS.py: static
-resultNodes,score=GraphScan(Graph, Pvalue, alpha_max='0.15', npss='BJ', verbose_level = 0)
+resultNodes=GraphScan(Graph, Pvalue, alpha_max='0.15', npss='BJ', verbose_level = 0)
 resultNodes is list of nodes
-score reflects the result score
 verbose_level!=0: print information
 
 DMGraphScan/DMGraphScan.py:  dynamic

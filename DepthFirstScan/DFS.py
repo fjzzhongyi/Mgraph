@@ -342,12 +342,12 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
     else:
         def spark_getcont(nid):
             # get the size of nodes comp contains
-            print alpha    
-            if att[nid][0] <= alpha:
-                if compdict.has_key(nid):
-                    return len(compdict[nid])
+            print alpha_b.value    
+            if att_b.value[nid][0] <= alpha_b.value:
+                if compdict_b.value.has_key(nid):
+                    return len(compdict_b.value[nid])
                 else:
-                    if att[nid][0] <= alpha:
+                    if att_b.value[nid][0] <= alpha_b.value:
                         return 1
                     else:
                         return 0
@@ -355,9 +355,9 @@ def setprioity(subset, att, compdict = {}, alpha=0.05):
                 return -1
         global sc
         rdd=sc.parallelize(subset)
-        sc.broadcast(att)
-        sc.broadcast(compdict)
-        sc.broadcast(alpha)
+        att_b=sc.broadcast(att)
+        compdict_b=sc.broadcast(compdict)
+        alpha_b=sc.broadcast(alpha)
         n=rdd.map(spark_getcont).reduce(lambda a,b:a+b)
     
     return n

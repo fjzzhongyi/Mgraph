@@ -4,23 +4,20 @@ import AdditiveScan.AdditiveScan
 import NPHGS.NPHGS
 import Meden.Meden 
 import EventTree.EventTree
-import os,sys
+import os,sys,re
 from pyspark import SparkContext, SparkConf
 from measure import *
 
 sc=None
 def sc_start(app):
     global sc
-    sc=SparkContext(appName=app)
-def sc_stop():
-    global sc
-    sc.stop()
+    SparkContext.setSystemProperty("spark.ui.enabled","false")
+    sc=SparkContext.getOrCreate()
 
 def sc_wrap(func):
     def wrapper(*args,**kwargs):
         sc_start("SubgraphScan")
         ret=func(*args,**kwargs)
-        sc_stop()
         return ret
     return wrapper
 
@@ -46,79 +43,57 @@ def genE(froot):
 
 @sc_wrap
 def genG(froot):
-    
-    """
-    # python version
-    # f2 a line:  2803301701 3022787727
-    f2=open(os.path.join(froot,'G'),'r')
-    s=f2.readline()
-    while len(s)>0:
-        s=s.strip().split(' ')
-        n1=int(s[0])
-        n2=int(s[1])
-        if graph.has_key(n1):
-            if n2 not in graph[n1]:
-                graph[n1].append(n2)
-        else:
-            graph[n1] = [n2]
-        if graph.has_key(n2):
-            if n1 not in graph[n2]:
-                graph[n2].append(n1)
-        else:
-            graph[n2] = [n1]
-        s=f2.readline()
-    f2.close()
-    """
-     
+    def doublemap(line):
+        n1,n2=line.split(' ')
+        return [line,n2+' '+n1]
+    def linemap(line):
+        n1,n2=line.split(' ')
+        return (int(n1),[int(n2)])
     # SPARK version
     global sc
-    text=sc.textFile(os.path.join(froot,'G'))
-    S=text.map(lambda x:x.split(' ')).collect()
-    #use map reduce
-    ?
-    for s in S:
-        n1=int(s[0])
-        n2=int(s[1])
-        if graph.has_key(n1):
-            if n2 not in graph[n1]:
-                graph[n1].append(n2)
-        else:
-            graph[n1] = [n2]
-        if graph.has_key(n2):
-            if n1 not in graph[n2]:
-                graph[n2].append(n1)
-        else:
-            graph[n2] = [n1]
-    
-
+    graph=sc.textFile(os.path.join(froot,'G'))\
+            .flatMap(doublemap)\
+            .distinct()\
+            .map(linemap)\
+            .reduceByKey(lambda a,b:a+b)
     return graph
 
-
+@sc_wrap
 def genSP(froot,slice):
     # slice starts from 0
     
-    Pvalue=[]
-    f=open(os.path.join(froot,'P'),'r')
-    s=f.readline()
-    while len(s)>0:
-        s=s.strip().split(' ')
-        Pvalue.append([float(s[slice])])
-        s=f.readline()
+    def linedec(line):
+        global slice
+        eles=re.split(" |:",line)
+        return (int(eles[0]),[float(eles[slice+1])])
+
+    global sc
+    Pvalue=sc.textFile(os.path.join(froot,'P'))\
+             .map(linedec)
     return Pvalue
 
+@sc_wrap
 def genP(froot):
-    Pvalue=[]
-    f=open(os.path.join(froot,'P'),'r')
-    s=f.readline()
-    while len(s)>0:
-        s=s.strip().split(' ')
-        Pvalue.append([float(i) for i in s])
-        s=f.readline()
+    def linedec(line):
+        global slice
+        eles=re.split(" |:",line)
+        return (int(eles[0]),[float(ele)  for ele in eles[1:]])
+
+    global sc
+    Pvalue=sc.textFile(os.path.join(froot,'P'))\
+             .map(linedec)
     return Pvalue
 
-def writeFile(outroot,method,result):
+def writeFile4D(outroot,method,result):
     fw=open(os.path.join(outroot,str(method)+'.txt'),'w+')
-    for each in result:
+    for each in result.sortByKey().collect():
+        fw.write(' '.join([str(ei) for ei in each[1]]))
+        fw.write('\n')
+        fw.flush()
+    fw.close()
+def writeFile4S(outroot,method,result):
+    fw=open(os.path.join(outroot,str(method)+'.txt'),'w+')
+    for each in result.collect():
         fw.write(' '.join([str(ei) for ei in each]))
         fw.write('\n')
         fw.flush()
@@ -152,11 +127,12 @@ if __name__=="__main__":
             result = DMGraphScan.DMGraphScan.GraphScan(Graph,Pvalue,verbose=True,input_B=10)
         elif method==6:
             result = EventTree.EventTree.detection(Graph,Pvalue,alpha_max=0.15)
-        writeFile(outroot,method,result)
+        writeFile4D(outroot,method,result)
     
     elif method in [2,3,4]:
         Graph=genG(froot)
-        Results=[]
+        global sc
+        Results=sc.parallelize([])
         for slice in range(0,slices):
             Pvalue=genSP(froot,slice)
             if method==2: 
@@ -164,16 +140,16 @@ if __name__=="__main__":
             elif method==3:
                 result= AdditiveScan.AdditiveScan.additive_graphscan(Graph,Pvalue,'BJ',Pvalue)
             elif method==4:
-                result = NPHGS.NPHGS.graphscan(Graph, Pvalue,alpha_max=0.15)
-            Results.append(result[0])
-        writeFile(outroot,method,Results)
+                result = NPHGS.NPHGS.GraphScan(Graph, Pvalue,alpha_max=0.15)
+            Results=Results.union(result)
+        writeFile4S(outroot,method,Results)
     
     elif method in [5]:
         E=genE(froot)
         Pvalue=genP(froot)
         if method==5:
             result = DMGraphScan.dp.DMGraphScan(Graph,Pvalue,verbose=True,input_B=10)
-        writeFile(outroot,method,result)
+        writeFile4D(outroot,method,result)
     
 
 

@@ -256,18 +256,18 @@ def GraphScan(graph, att, npss='BJ', iterations_bound=10, ncores=8, minutes=30):
     sfscore = None
     salpha = None
     def spark_proc(alpha):    
-        # INPUT: alpha, ori_att, ori_graph
+        # INPUT: alpha, ori_att_b.value, ori_graph_b.value
         print 'processing alpha : ',alpha,' ; start to execute additive scan'
-        att1 = [ 1 if pvalue[0] <= alpha else -1 for pvalue in ori_att]
-        graph, att1, compdict = refine_graph(ori_graph, att1, alpha)#compdict component dictionary
+        att1 = [ 1 if pvalue[0] <= alpha else -1 for pvalue in ori_att_b.value]
+        graph, att1, compdict = refine_graph(ori_graph_b.value, att1, alpha)#compdict component dictionary
         print '# connected components: ', len(compdict)
         print '# cores : ',ncores
         alpha_sstar, alpha_sfscore =  \
         additive_graphscan_proc(graph, att1,npss,globalPValue, compdict, alpha, iterations_bound, ncores, minutes)
         return (alpha,(alpha_sstar,alpha_sfscore))
     global sc
-    sc.broadcast(ori_att)
-    sc.broadcast(ori_graph)
+    ori_att_b=sc.broadcast(ori_att)
+    ori_graph_b=sc.broadcast(ori_graph)
     result=sc.parallelize(alphas)\
             .map(spark_proc)\
             .reduce(lambda a,b: a if a[1][1]>b[1][1] else b)

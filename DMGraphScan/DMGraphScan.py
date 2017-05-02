@@ -181,17 +181,6 @@ def sc_wrap(func):
         sc_stop()
         return ret
     return wrapper
-
-@sc_wrap
-def GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=0.15,input_B=2,verbose=False):
-    Graph,Pvalue=RDDdec(Graph_RDD,Pvalue_RDD)
-    gv.B=input_B
-    # segment should not play its role in this Function, supposing that input size is not so huge. so no need for cut them into segments
-    
-    # !!!! alpha is constant, needed modification
-    gv.segment=len(Pvalue[0])
-    return dp(Graph,Pvalue,fileinput=False,verbose=verbose)
-
 def RDDdec(Graph_RDD,Pvalue_RDD):
 
 #Graph   FOR nodewise: connections (nodeNo., [connected nodes]) / (int, [int,int,...])
@@ -208,6 +197,20 @@ def RDDdec(Graph_RDD,Pvalue_RDD):
     [ele[1] for ele in sorted(Pvalue_RDD.collect(),key=lambda x: x[0])]
     print Graph,Pvalue
     return Graph,Pvalue
+def SubgraphEnc(subgraphs):
+    global sc
+    return sc.parallelize([(index,subgraph)for index,subgraph in enumerate(subgraphs)])
+
+@sc_wrap
+def GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=0.15,input_B=2,verbose=False):
+    Graph,Pvalue=RDDdec(Graph_RDD,Pvalue_RDD)
+    gv.B=input_B
+    # segment should not play its role in this Function, supposing that input size is not so huge. so no need for cut them into segments
+    
+    # !!!! alpha is constant, needed modification
+    gv.segment=len(Pvalue[0])
+    return SubgraphEnc(dp(Graph,Pvalue,fileinput=False,verbose=verbose))
+
 
 if __name__=='__main__':
 
