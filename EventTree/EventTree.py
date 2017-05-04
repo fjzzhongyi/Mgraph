@@ -1,7 +1,34 @@
 import commands
 import sys,os,re
 
-def GraphScan(Graph,Pvalue,alpha_max=0.15):
+sc=None
+def sc_start():
+    global sc
+    sc=SparkContext.getOrCreate()
+
+def sc_wrap(func):
+    def wrapper(*args,**kwargs):
+        sc_start()
+        ret=func(*args,**kwargs)
+        return ret
+    return wrapper
+def RDDdec(Graph_RDD,Pvalue_RDD):
+    Graph={}
+    for ele in Graph_RDD.collect():
+        Graph[ele[0]]=ele[1]
+    Pvalue=\
+    [ele[1] for ele in sorted(Pvalue_RDD.collect(),key=lambda x: x[0])]
+    return Graph,Pvalue
+def SubgraphEnc(subgraphs):
+    global sc
+    if len(subgraphs)==0 or not isinstance(subgraphs[0],list):
+        reRDD=sc.parallelize([subgraphs])
+    else:
+        reRDD=sc.parallelize([(index,subgraph)for index,subgraph in enumerate(subgraphs)])
+    return reRDD
+
+def GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=0.15):
+    Graph,Pvalue=RDDdec(Graph_RDD,Pvalue_RDD)
     #Graph {0:[1,2],...}
     #Pvalue=[[],[],[]]
     filepath= os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
@@ -24,4 +51,4 @@ def GraphScan(Graph,Pvalue,alpha_max=0.15):
     os.remove(Rpath)
     os.remove(Gpath)
     os.remove(Ppath)
-    return result
+    return SubgraphEnc(result)

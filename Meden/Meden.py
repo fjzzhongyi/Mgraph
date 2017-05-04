@@ -1,8 +1,36 @@
 import commands
 import sys,os,re
-def GraphScan(Graph,Pvalue,alpha_max=0.15):
+from pyspark import SparkContext,SparkConf
+
+sc=None
+def sc_start():
+    global sc
+    sc=SparkContext.getOrCreate()
+
+def sc_wrap(func):
+    def wrapper(*args,**kwargs):
+        sc_start()
+        ret=func(*args,**kwargs)
+        return ret
+    return wrapper
+def RDDdec(Graph_RDD,Pvalue_RDD):
+    Graph=[str(ele[1][0])+"-"+str(ele[1][1]) for ele in sorted(Graph_RDD.collect(),key=lambda x: x[0])]
+    Pvalue=\
+    [ele[1] for ele in sorted(Pvalue_RDD.collect(),key=lambda x: x[0])]
+    return Graph,Pvalue
+def SubgraphEnc(subgraphs):
+    global sc
+    if len(subgraphs)==0 or not isinstance(subgraphs[0],list):
+        reRDD=sc.parallelize([subgraphs])
+    else:
+        reRDD=sc.parallelize([(index,subgraph)for index,subgraph in enumerate(subgraphs)])
+    return reRDD
+@sc_wrap
+def GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=0.15):
+    Graph,Pvalue=RDDdec(Graph_RDD,Pvalue_RDD)
+    
     #Graph [edge1, edge2, edge3, ]
-    #         edge%n: str   format like  "1_2"
+    #         edge%n: str   format like  "1-2"
     #Pvalue [[float, ],[],[],[]...]
 
     # to be finished: transform vertex_graph which only vertices have pvalues into edge_graph which only edges have pvalues   
@@ -53,4 +81,4 @@ def GraphScan(Graph,Pvalue,alpha_max=0.15):
         print items
         for item in items:
             result[t].append(item.lstrip(' ').split('(')[0])
-    return result
+    return SubgraphEnc(result)

@@ -10,4 +10,5 @@ E1
 testSpark
 metastore_db
 EventTreeSpark.jar
+*.swp
 *.log
