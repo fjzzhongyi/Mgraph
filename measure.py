@@ -18,4 +18,4 @@ class logger:
             # cpu rss vms
             self.file.write(str(p1.cpu_percent(interval=0.05))+' '+str(p1.memory_info()[0])+' '+str(p1.memory_info()[1])+'\n')
             #print cpu,memo
-            time.sleep(1)
+time.sleep(1)

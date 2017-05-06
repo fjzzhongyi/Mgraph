@@ -1,5 +1,6 @@
 import commands
 import sys,os,re
+from pyspark import SparkContext
 
 sc=None
 def sc_start():
@@ -26,7 +27,7 @@ def SubgraphEnc(subgraphs):
     else:
         reRDD=sc.parallelize([(index,subgraph)for index,subgraph in enumerate(subgraphs)])
     return reRDD
-
+@sc_wrap
 def GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=0.15):
     Graph,Pvalue=RDDdec(Graph_RDD,Pvalue_RDD)
     #Graph {0:[1,2],...}

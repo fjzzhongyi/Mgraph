@@ -13,6 +13,28 @@ RDD based:
 Refine
     Result  static: nodelist 
             dynamic: (index,nodelist) / (int,[int,int,int,...]) 
+
+
+JSON INPUT:
+Graph***.json
+{
+    "name": "haze",
+    "date": "2000-01-01_12-01-01",
+    "nodes": [
+        {"name": "1", "value": 0.1, "selected": True}, {"name": "2", "value": 0.1}
+    ],
+    "edges": [
+        {"source": "1", "target": "2", "value": 0.15}
+    ],
+    "remark":{
+    }
+}
+
+
+
+
+
+
 !!MENTION!!
 As for AdditiveScan and DFS algorithm, pvalue should bigger than 0!! 
 

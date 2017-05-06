@@ -1,4 +1,4 @@
-from vertex import leaf,nonleaf,sc,sc_start,sc_stop
+from vertex import leaf,nonleaf,sc,sc_start
 from node import Node
 from ksubgraph import ISTG
 import os,datetime,threading,itertools,sys
@@ -176,11 +176,11 @@ def dp(Graph=None,Pvalue=None,fileinput=True,verbose=False):
 
 def sc_wrap(func):
     def wrapper(*args,**kwargs):
-        sc_start("DMGraphScan") 
+        sc_start()
         ret=func(*args,**kwargs)
-        sc_stop()
         return ret
     return wrapper
+
 def RDDdec(Graph_RDD,Pvalue_RDD):
 
 #Graph   FOR nodewise: connections (nodeNo., [connected nodes]) / (int, [int,int,...])

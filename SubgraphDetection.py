@@ -1,17 +1,26 @@
+import sys
 import DMGraphScan.DMGraphScan
 import DepthFirstScan.DFS
 import AdditiveScan.AdditiveScan
 import NPHGS.NPHGS
 import Meden.Meden 
 import EventTree.EventTree
-import os,sys,re
-from pyspark import SparkContext, SparkConf
+import os,re,json,copy
 from measure import *
+from pyspark import SparkContext, SparkConf
 
 sc=None
+methods={1:"DMGraphScan",2:"DepthFirstScan",3:"AdditiveScan",4:"NPHGS",5:"Meden",6:"EventTree"}
+
 def sc_start(app):
     global sc
+    SparkContext.setSystemProperty("spark.port.maxRetries","100")
     SparkContext.setSystemProperty("spark.ui.enabled","false")
+    SparkContext.setSystemProperty("spark.task.cpus","2")
+    SparkContext.setSystemProperty("spark.driver.memory","100g")
+    SparkContext.setSystemProperty("spark.driver.maxResultSize","20g")
+    SparkContext.setSystemProperty("spark.driver.cores","4")
+    SparkContext.setSystemProperty("spark.executor.instances","25")
     sc=SparkContext.getOrCreate()
 
 def sc_wrap(func):
@@ -22,103 +31,75 @@ def sc_wrap(func):
     return wrapper
 
 @sc_wrap
-def genE(froot):
-    """
-    # python version
-    E=[]
-    # f2 a line:  2803301701 3022787727
-    f2=open(os.path.join(froot,'E'),'r')
-    s=f2.readline()
-    while len(s)>0:
-        E.append(s.strip().replace(' ','-'))
-        s=f2.readline()
-    f2.close()
-    """
-    def linedec(line):
-        global slice
-        eles=re.split(" |:",line)
-        return (int(eles[0]),(int(eles[1]),int(eles[2])))
-    
-    # SPARK version
+def genE(Graph):
     global sc
-    # line  0:1 3    edgeNo:node1 node2
-    E =sc.textFile(os.path.join(froot,'E'))\
-            .map(linedec)
-    
-    return E
+    E=sc.parallelize([(edge["index"],(int(edge["source"]),int(edge["target"]))) for edge in Graph["edges"]])
+    Pvalue=sc.parallelize([(edge["index"],edge["value"]) for edge in Graph["edges"]])
+
+    return E,Pvalue
 
 @sc_wrap
-def genG(froot):
-    def doublemap(line):
-        n1,n2=line.split(' ')
-        return [line,n2+' '+n1]
-    def linemap(line):
-        n1,n2=line.split(' ')
-        return (int(n1),[int(n2)])
-    # SPARK version
+def genG(Graph):
     global sc
-    graph=sc.textFile(os.path.join(froot,'G'))\
-            .flatMap(doublemap)\
-            .distinct()\
-            .map(linemap)\
-            .reduceByKey(lambda a,b:a+b)
+    edges=set()
+    for edge in Graph["edges"]:
+        edges.add((int(edge["source"]),int(edge["target"])))
+        edges.add((int(edge["target"]),int(edge["source"])))
+    graph=sc.parallelize([(edge[0],[edge[1]]) for edge in edges])\
+        .reduceByKey(lambda a,b:a+b)
     return graph
 
 @sc_wrap
-def genSP(froot,slice):
+def genSP(Graph,slice):
     # slice starts from 0
-    
-    def linedec(line):
-        global slice
-        eles=re.split(" |:",line)
-        return (int(eles[0]),[float(eles[slice+1])])
-
-    global sc
-    Pvalue=sc.textFile(os.path.join(froot,'P'))\
-             .map(linedec)
+    global sc 
+    Pvalue=sc.parallelize([(int(node["name"]),node["value"][slice:slice+1] )for node in Graph["nodes"]]) 
     return Pvalue
 
 @sc_wrap
-def genP(froot):
-    def linedec(line):
-        eles=re.split(" |:",line)
-        return (int(eles[0]),[float(ele)  for ele in eles[1:]])
-
-    global sc
-    Pvalue=sc.textFile(os.path.join(froot,'P'))\
-             .map(linedec)
+def genP(Graph):
+    global sc 
+    Pvalue=sc.parallelize([(int(node["name"]),node["value"] )for node in Graph["nodes"]])
     return Pvalue
 
-def writeFile4D(outroot,method,result):
-    fw=open(os.path.join(outroot,str(method)+'.txt'),'w+')
-    for each in result.sortByKey().collect():
-        fw.write(' '.join([str(ei) for ei in each[1]]))
-        fw.write('\n')
-        fw.flush()
-    fw.close()
-def writeFile4S(outroot,method,result):
-    fw=open(os.path.join(outroot,str(method)+'.txt'),'w+')
-    for each in result.collect():
-        fw.write(' '.join([str(ei) for ei in each]))
-        fw.write('\n')
-        fw.flush()
-    fw.close()
+#? selected
+def writeFile(outroot,method,Graph,result):
+    RC=result.collect()
+    if isinstance(RC[0],list):
+        result_nodes=RC
+        print "go Single"
+    elif isinstance(RC[0],tuple):
+        result_nodes=[each[1] for each in sorted(RC,key=lambda x: x[0])]
+        print "go Complex"
+    else:
+        print "Error: this cannot occur"
+        sys.exit()
 
-def getSlices(froot):
-    f=open(os.path.join(froot,'P'),'r')
-    s=f.readline().strip().split(' ')
-    f.close()
-    return len(s)
+    global methods
+    for slice in range(Graph["slices"]):
+        outputG=copy.deepcopy(Graph)
+        fw=open(os.path.join(outroot,str(slice)+'_'+methods[method]+'.json'),'w+')
+        for node in outputG["nodes"]:
+            if int(node["name"]) in result_nodes[slice]:
+                node["selected"]=True
+            else:
+                node["selected"]=False
+            node["value"]=node["value"][slice]
+        json.dump(outputG,fw)
+        fw.close()
 
 if __name__=="__main__":
     lg=logger()
     
-    # python SubgraphDetection data 1 
+    # python SubgraphDetection   data     1 
+    #        argv[0]             argv[1]  argv[2]
     froot = os.path.join(sys.argv[1])
     outroot= os.path.join(sys.argv[1],'output')
     if not os.path.exists(outroot):
         os.mkdir(outroot)
-    slices = getSlices(froot)
+    f=open(os.path.join(froot,'Graph.json'),'r')
+    Graph=json.load(f) 
+    slices=Graph["slices"]
     #slice starts from 0
 
     method = int(sys.argv[2])
@@ -126,35 +107,34 @@ if __name__=="__main__":
     # 2 DFS  3 Addi  4 NPHGS
     # 5 Meden
     if method in [1,6]:
-        Graph=genG(froot)
-        Pvalue=genP(froot)
+        Graph_RDD=genG(Graph)
+        Pvalue_RDD=genP(Graph)
         if method==1:
-            result = DMGraphScan.DMGraphScan.GraphScan(Graph,Pvalue,verbose=True,input_B=10)
+            result = DMGraphScan.DMGraphScan.GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[3]),input_B=int(sys.argv[4]))
         elif method==6:
-            result = EventTree.EventTree.GraphScan(Graph,Pvalue,alpha_max=0.15)
-        writeFile4D(outroot,method,result)
+            result = EventTree.EventTree.GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[3]))
+        writeFile(outroot,method,Graph,result)
     
     elif method in [2,3,4]:
-        Graph=genG(froot)
+        Graph_RDD=genG(Graph)
         global sc
         Results=sc.parallelize([])
         for slice in range(0,slices):
-            Pvalue=genSP(froot,slice)
+            Pvalue_RDD=genSP(Graph,slice)
             if method==2: 
-                result= DepthFirstScan.DFS.GraphScan(Graph,Pvalue,radius=7,anomaly_ratio=0.5,minutes=30,alpha_max=0.15)
+                result= DepthFirstScan.DFS.GraphScan(Graph_RDD,Pvalue_RDD,radius=float(sys.argv[3]),anomaly_ratio=float(sys.argv[4]),minutes=int(sys.argv[5]),alpha_max=float(sys.argv[6]))
             elif method==3:
-                result= AdditiveScan.AdditiveScan.GraphScan(Graph,Pvalue,npss='BJ',iterations_bound=10,ncores=8,minutes=30)
+                result= AdditiveScan.AdditiveScan.GraphScan(Graph_RDD,Pvalue_RDD,npss=sys.argv[3],iterations_bound=int(sys.argv[4]),ncores=int(sys.argv[5]),minutes=float(sys.argv[6]))
             elif method==4:
-                result = NPHGS.NPHGS.GraphScan(Graph, Pvalue,alpha_max=0.15,npss='BJ')
+                result = NPHGS.NPHGS.GraphScan(Graph_RDD, Pvalue_RDD,alpha_max=float(sys.argv[3]),npss=sys.argv[4])
             Results=Results.union(result)
-        writeFile4S(outroot,method,Results)
+        writeFile(outroot,method,Graph,Results)
     
     elif method in [5]:
-        E=genE(froot)
-        Pvalue=genP(froot)
+        E,Pvalue=genE(Graph)
         if method==5:
-            result = Meden.Meden.GraphScan(E,Pvalue,alpha_max=0.15)
-        writeFile4D(outroot,method,result)
+            result = Meden.Meden.GraphScan(E,Pvalue,alpha_max=float(sys.argv[3]))
+        writeFile(outroot,method,Graph,result)
     
 
 

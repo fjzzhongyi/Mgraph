@@ -12,3 +12,4 @@ metastore_db
 EventTreeSpark.jar
 *.swp
 *.log
+cpu_memo_log

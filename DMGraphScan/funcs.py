@@ -4,7 +4,7 @@ from ksubgraph import ISTG
 import os,datetime
 from GV import *
 import copy
-def getDuration(Pvalue=None,fileinput=True):
+def getDuration(Pvalue=None,fileinput=False):
     if fileinput is True:
         with open(os.path.join(gv.froot,'pvalues.dat'),'r') as f:
             s=f.readline()
@@ -12,7 +12,7 @@ def getDuration(Pvalue=None,fileinput=True):
     else:
         gv.duration=len(Pvalue[0])
         
-def add_pvalue(Pvalue=None,fileinput=True):
+def add_pvalue(Pvalue=None,fileinput=False):
     print 'add_pvalue...'
     if fileinput is True:    
         f=open(os.path.join(gv.froot,'pvalues.dat'),'r')
@@ -44,7 +44,7 @@ def add_parent():
         for eachchild in eachnode.child:
             eachchild.parent=eachnode
 
-def genG(Graph=None, fileinput=True):
+def genG(Graph=None, fileinput=False):
     print 'genG...'
     if fileinput is True:
         G={}
@@ -72,16 +72,19 @@ def genG(Graph=None, fileinput=True):
         f2.close()
         return G
     else:
+        print Graph
         G={}
-        for n in Graph.keys():
-            name=str(n)
-            num_name[n]=name
-            G[name]={}
         
         for n1 in Graph.keys():
             for n2 in Graph[n1]:
+                if str(n1) not in G:
+                    G[str(n1)]={}
+                if str(n2) not in G:
+                    G[str(n2)]={}
                 G[str(n1)][str(n2)]=1
                 G[str(n2)][str(n1)]=1
+        for node in G.keys():
+            num_name[int(node)]=node
         return G
     
 
@@ -184,7 +187,7 @@ def readISTG():
 
     return name_node[root]
 
-def genGpv(Graph=None, Pvalue=None ,fileinput=True):
+def genGpv(Graph=None, Pvalue=None ,fileinput=False):
     print 'genGpv...'
     Gpv={}
     

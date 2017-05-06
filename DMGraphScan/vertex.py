@@ -3,12 +3,9 @@ import solutionlist,gc
 import sys,time
 from pyspark import SparkContext
 sc=None
-def sc_start(app):
+def sc_start():
     global sc
-    sc=SparkContext(appName=app)
-def sc_stop():
-    global sc
-    sc.stop()
+    sc=SparkContext.getOrCreate()
 
 def extend(ori, root, target):
     if len(ori)==0 and root is None:
