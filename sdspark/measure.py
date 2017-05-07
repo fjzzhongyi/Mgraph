@@ -6,7 +6,8 @@ import thread
 import psutil
 class logger:
     def __init__(self): 
-        self.file = open('cpu_memo_log','w+')
+        base= os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+        self.file = open(os.path.join(base,'cpu_memo_log'),'w+')
         t1=thread.start_new_thread(self.log,())
     def get(self):
         return self.cpu_per,self.memo_per

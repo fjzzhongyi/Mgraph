@@ -66,21 +66,28 @@ def GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=0.15):
                 fw.write(Graph[edge_index].replace('-',','))
                 fw.write(','+str(t)+','+str(Pvalue[edge_index][t])+'\n')
     command = "java -Xms1024m -Xmx2048m -jar "+medenpath+" -run "+temppath+" "+str(start)+" "+str(end)+" p "+str(alpha_max)
+    
     line= str(commands.getoutput(command))
-    print line
-    #os.remove(temppath) 
+    #print line
+    os.remove(temppath) 
     
     #result is set of edges going along with t-slice:  [[edge1,edge2,]...]
     result = [[]for i in range(len(Pvalue[0]))]
     outputs= line.split('\n')
     #print outputs
-    t1,t2=outputs[2].split(']')[0].split('[')[1].split(',')
-    p=re.compile(r' \d*-\d*\(-?.*?\)')
-    for t in range(int(t1),int(t2)+1):
-        items=p.findall(re.search(r'\{.*\}',outputs[3+t-int(t1)]).group(0)) 
-        # item example : " 88-47(0.32)"
-        print items
-        for item in items:
-            n1,n2=item.lstrip(' ').split('(')[0].split('-')
-            result[t]+=[int(n1),int(n2)]
-    return SubgraphEnc(list(set(result)))
+    
+    try:
+        t1,t2=outputs[2].split(']')[0].split('[')[1].split(',')
+        p=re.compile(r' \d*-\d*\(-?.*?\)')
+        for t in range(int(t1),int(t2)+1):
+            items=p.findall(re.search(r'\{.*\}',outputs[3+t-int(t1)]).group(0)) 
+            # item example : " 88-47(0.32)"
+            print items
+            for item in items:
+                n1,n2=item.lstrip(' ').split('(')[0].split('-')
+                result[t]+=[int(n1),int(n2)]
+            result[t]=list(set(result[t]))
+    except:
+        pass
+    
+    return SubgraphEnc(result)

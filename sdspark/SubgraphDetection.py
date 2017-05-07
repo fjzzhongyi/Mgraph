@@ -1,12 +1,13 @@
-import sys
-import DMGraphScan.DMGraphScan
-import DepthFirstScan.DFS
-import AdditiveScan.AdditiveScan
-import NPHGS.NPHGS
-import Meden.Meden 
-import EventTree.EventTree
-import os,re,json,copy
-from measure import *
+import sys,os
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.expanduser(__file__))))
+from sdspark.DMGraphScan.DMGraphScan import GraphScan as dmgraphscan
+from sdspark.DepthFirstScan.DFS import GraphScan as dfs
+from sdspark.AdditiveScan.AdditiveScan import GraphScan as additivescan
+from sdspark.NPHGS.NPHGS import GraphScan as nphgs
+from sdspark.Meden.Meden import GraphScan as meden
+from sdspark.EventTree.EventTree import GraphScan as eventtree
+import re,json,copy
+from sdspark.measure import *
 from pyspark import SparkContext, SparkConf
 
 sc=None
@@ -110,9 +111,9 @@ if __name__=="__main__":
         Graph_RDD=genG(Graph)
         Pvalue_RDD=genP(Graph)
         if method==1:
-            result = DMGraphScan.DMGraphScan.GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[3]),input_B=int(sys.argv[4]))
+            result = dmgraphscan(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[3]),input_B=int(sys.argv[4]))
         elif method==6:
-            result = EventTree.EventTree.GraphScan(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[3]))
+            result = eventtree(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[3]))
         writeFile(outroot,method,Graph,result)
     
     elif method in [2,3,4]:
@@ -122,18 +123,18 @@ if __name__=="__main__":
         for slice in range(0,slices):
             Pvalue_RDD=genSP(Graph,slice)
             if method==2: 
-                result= DepthFirstScan.DFS.GraphScan(Graph_RDD,Pvalue_RDD,radius=float(sys.argv[3]),anomaly_ratio=float(sys.argv[4]),minutes=int(sys.argv[5]),alpha_max=float(sys.argv[6]))
+                result= dfs(Graph_RDD,Pvalue_RDD,radius=float(sys.argv[3]),anomaly_ratio=float(sys.argv[4]),minutes=int(sys.argv[5]),alpha_max=float(sys.argv[6]))
             elif method==3:
-                result= AdditiveScan.AdditiveScan.GraphScan(Graph_RDD,Pvalue_RDD,npss=sys.argv[3],iterations_bound=int(sys.argv[4]),ncores=int(sys.argv[5]),minutes=float(sys.argv[6]))
+                result= additivescan(Graph_RDD,Pvalue_RDD,npss=sys.argv[3],iterations_bound=int(sys.argv[4]),ncores=int(sys.argv[5]),minutes=float(sys.argv[6]))
             elif method==4:
-                result = NPHGS.NPHGS.GraphScan(Graph_RDD, Pvalue_RDD,alpha_max=float(sys.argv[3]),npss=sys.argv[4])
+                result = nphgs(Graph_RDD, Pvalue_RDD,alpha_max=float(sys.argv[3]),npss=sys.argv[4])
             Results=Results.union(result)
         writeFile(outroot,method,Graph,Results)
     
     elif method in [5]:
         E,Pvalue=genE(Graph)
         if method==5:
-            result = Meden.Meden.GraphScan(E,Pvalue,alpha_max=float(sys.argv[3]))
+            result = meden(E,Pvalue,alpha_max=float(sys.argv[3]))
         writeFile(outroot,method,Graph,result)
     
 

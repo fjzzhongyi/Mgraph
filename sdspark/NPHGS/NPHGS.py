@@ -1,4 +1,5 @@
 import os,sys,datetime
+
 import random
 import json
 import math
@@ -8,7 +9,7 @@ import sys
 import numpy as np
 import copy
 import time
-import npssScore as npssS
+import sdspark.NPHGS.npssScore as npssS
 import networkx as nx
 from pyspark import SparkContext,SparkConf
 
