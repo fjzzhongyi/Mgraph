@@ -550,7 +550,7 @@ def GraphScan(Graph_RDD, Pvalue_RDD, radius = 7, anomaly_ratio = 0.5, minutes = 
                                 subset_score[0] = sorted(oriset)
                             else:
                                 subset_score = [[], 0]
-                            return subset_score
+                            return SubgraphEnc(subset_score[0])
                     # print iter, neis
                     # calc new routes
                     for idx, nei in enumerate(neis):
