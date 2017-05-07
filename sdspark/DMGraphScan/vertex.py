@@ -2,10 +2,8 @@ import GV,math,itertools
 import solutionlist,gc
 import sys,time
 from pyspark import SparkContext
-sc=None
-def sc_start():
-    global sc
-    sc=SparkContext.getOrCreate()
+
+sc=SparkContext.getOrCreate()
 
 def extend(ori, root, target):
     if len(ori)==0 and root is None:

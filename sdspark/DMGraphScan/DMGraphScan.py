@@ -1,11 +1,15 @@
-from vertex import leaf,nonleaf,sc,sc_start
+from vertex import leaf,nonleaf
 from node import Node
 from ksubgraph import ISTG
 import os,datetime,threading,itertools,sys
 from GV import *
 from funcs import *
+from pyspark import SparkContext
 #
-
+sc=None
+def sc_start():
+    global sc
+    sc=SparkContext.getOrCreate()
 
 def dGraphScan(root):
     def  dp_r(node):
