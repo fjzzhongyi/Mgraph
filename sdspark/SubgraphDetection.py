@@ -1,5 +1,5 @@
 import sys,os
-#sys.path.append(os.path.dirname(os.path.abspath(os.path.expanduser(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))))
 from sdspark.DMGraphScan.DMGraphScan import GraphScan as dmgraphscan
 from sdspark.DepthFirstScan.DFS import GraphScan as dfs
 from sdspark.AdditiveScan.AdditiveScan import GraphScan as additivescan
