@@ -1,5 +1,5 @@
 import sys,os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))))
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))))
 from sdspark.DMGraphScan.DMGraphScan import GraphScan as dmgraphscan
 from sdspark.DepthFirstScan.DFS import GraphScan as dfs
 from sdspark.AdditiveScan.AdditiveScan import GraphScan as additivescan
@@ -34,8 +34,8 @@ def sc_wrap(func):
 @sc_wrap
 def genE(Graph):
     global sc
-    E=sc.parallelize([(edge["index"],(int(edge["source"]),int(edge["target"]))) for edge in Graph["edges"]])
-    Pvalue=sc.parallelize([(edge["index"],edge["value"]) for edge in Graph["edges"]])
+    E=sc.parallelize([(Graph["edge"].index(edge),(int(edge["source"]),int(edge["target"]))) for edge in Graph["edges"]])
+    Pvalue=sc.parallelize([(Graph["edge"].index(edge),edge["value"]) for edge in Graph["edges"]])
 
     return E,Pvalue
 

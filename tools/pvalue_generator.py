@@ -2,6 +2,16 @@ import re
 import numpy as np
 # From KDD 2014
 # pdvalue(pvalue of some attribute)-> pvalue  
+
+# input file:
+#               Format " ([], [], [], [], ...) ( .... )"
+#               (): a day's raw data of one observed node
+#               []: A Vector ---- One feature of the observed node in a certain day 
+#               
+
+# duration:
+#        
+
 def calc(inputfile,outputfile,duration=1):
     def I(compare):
         if compare:
@@ -27,7 +37,9 @@ def calc(inputfile,outputfile,duration=1):
                 pvalues.append(np.average([ I(min_pdvalues[ob_day]<=min_pdvalues[day])for ob_day in days_set[:-1] ]) )
 
             fw.write(' '.join([ str(value) for value in pvalues])+'\n')
+
+    print "Successfully convert p-values"
 if __name__=="__main__":
-    #calc("1","2",3)
+    calc("raw_value","p_value",1)
 
     
