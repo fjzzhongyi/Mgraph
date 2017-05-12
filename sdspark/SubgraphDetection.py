@@ -7,7 +7,7 @@ from sdspark.NPHGS.NPHGS import GraphScan as nphgs
 from sdspark.Meden.Meden import GraphScan as meden
 from sdspark.EventTree.EventTree import GraphScan as eventtree
 import re,json,copy
-from sdspark.measure import *
+from sdspark.measure import logger
 from pyspark import SparkContext, SparkConf
 
 sc=None
@@ -90,7 +90,6 @@ def writeFile(outroot,method,Graph,result):
         fw.close()
 
 if __name__=="__main__":
-    lg=logger()
     
     # python SubgraphDetection   datainput    outputdir     1 
     #        argv[0]             argv[1]      argv[2]       argv[3]
@@ -98,6 +97,7 @@ if __name__=="__main__":
     outroot= sys.argv[2]
     if not os.path.exists(outroot):
         os.mkdir(outroot)
+    lg=logger(outroot)
     f=open(frootfile,'r')
     Graph=json.load(f) 
     slices=Graph["slices"]
