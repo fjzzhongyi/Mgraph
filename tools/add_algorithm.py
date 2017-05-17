@@ -1,10 +1,18 @@
 import re,sys
 import os,shutil
 def add(srcdir,func=None):
-    sdspark=os.path.join(os.path.dirname(os.getcwd()),"sdspark")
-    
-    despath=os.path.join(os.path.dirname(os.getcwd()),"sdspark",os.path.basename(srcdir))
-    
+    srcdir=srcdir.rstrip(os.sep)
+    sdspark=None
+    for syspath in sys.path:
+        p=os.path.join(syspath,"sdspark")
+        if os.path.exists(p) and os.path.isdir(p):
+            sdspark=p
+            break
+    if sdspark==None:
+        print "plz ensure MGraph is within your system paths list"
+        return False
+
+    despath=os.path.join(sdspark,os.path.basename(srcdir))
     #copy
     if not os.path.exists(srcdir):
         print "source dir not exists"
@@ -16,7 +24,7 @@ def add(srcdir,func=None):
         print "absolute path is needed"
         return False
     
-    if os.path.exists(os.path.join(sdspark,os.path.basename(srcdir))):
+    if os.path.exists(os.path.join(despath)):
         print "this algo has exist. you need rename your dir"
         return False
 
