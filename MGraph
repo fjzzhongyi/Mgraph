@@ -2,13 +2,16 @@
 import argparse
 import tools.check_connectness as con
 import tools.pvalue_generator as pval
+import tools.add_algorithm as addAlgo
 
 parser= argparse.ArgumentParser()
-parser.add_argument("Method",choices=['calP','maxCon'],help="choose target method")
+parser.add_argument("Method",choices=['calP','maxCon','addAlgo'],help="choose target method")
 
 parser.add_argument("-I","--Input",help="your input path of raw data",required=True)
 parser.add_argument("-O","--Output",help="your output path of result",required=True)
 parser.add_argument("-D","--Duration",type=int,default=1,help="observed duration(time intervals) of data when calculate the pvalue")
+
+parser.add_argument("-A","--Algorithm",help="the path of your algorithm to be added",required=True)
 
 args=parser.parse_args()
 #print args
@@ -17,3 +20,5 @@ if args.Method=='calP':
     pval.calc(args.Input,args.Output,args.Duration)
 elif args.Method=='maxCon':
     con.operate(args.Input,args.Output)
+elif args.Method=="addAlgo":
+    addAlgo.add(args.Algorithm)
