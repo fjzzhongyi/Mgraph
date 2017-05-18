@@ -1,5 +1,6 @@
 import sys,os
 #sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))))
+import argparse
 from sdspark.DMGraphScan.DMGraphScan import GraphScan as dmgraphscan
 from sdspark.DepthFirstScan.DFS import GraphScan as dfs
 from sdspark.AdditiveScan.AdditiveScan import GraphScan as additivescan
@@ -91,10 +92,22 @@ def writeFile(outroot,method,Graph,result):
 
 if __name__=="__main__":
     
-    # python SubgraphDetection   datainput    outputdir     1 
-    #        argv[0]             argv[1]      argv[2]       argv[3]
-    frootfile=sys.argv[1] 
-    outroot= sys.argv[2]
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--inputfile",required=True)
+    parser.add_argument("--outputdir",required=True)
+    parser.add_argument("--method",type=int,required=True)
+    parser.add_argument("--alpha_max",type=float)
+    parser.add_argument("--npss")
+    parser.add_argument("--input_b",type=int)
+    parser.add_argument("--radius",type=float)
+    parser.add_argument("--anomaly_ratio",type=float)
+    parser.add_argument("--minutes",type=int)
+    parser.add_argument("--interations_bound",type=int)
+    parser.add_argument("--ncores",type=int)
+    args=parser.parse_args()
+    
+    frootfile=args.inputfile 
+    outroot= args.outputdir
     if not os.path.exists(outroot):
         os.mkdir(outroot)
     lg=logger(outroot)
@@ -103,7 +116,7 @@ if __name__=="__main__":
     slices=Graph["slices"]
     #slice starts from 0
 
-    method = int(sys.argv[3])
+    method = args.method
     # 1 DMGraphScan  6 EventTree 
     # 2 DFS  3 Addi  4 NPHGS
     # 5 Meden
@@ -111,9 +124,9 @@ if __name__=="__main__":
         Graph_RDD=genG(Graph)
         Pvalue_RDD=genP(Graph)
         if method==1:
-            result = dmgraphscan(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[4]),input_B=int(sys.argv[5]))
+            result = dmgraphscan(Graph_RDD,Pvalue_RDD,alpha_max=args.alpha_max, input_B=args.input_b )
         elif method==6:
-            result = eventtree(Graph_RDD,Pvalue_RDD,alpha_max=float(sys.argv[4]))
+            result = eventtree(Graph_RDD,Pvalue_RDD,alpha_max=args.alpha_max)
         writeFile(outroot,method,Graph,result)
     
     elif method in [2,3,4]:
@@ -123,18 +136,18 @@ if __name__=="__main__":
         for slice in range(0,slices):
             Pvalue_RDD=genSP(Graph,slice)
             if method==2: 
-                result= dfs(Graph_RDD,Pvalue_RDD,radius=float(sys.argv[4]),anomaly_ratio=float(sys.argv[5]),minutes=int(sys.argv[6]),alpha_max=float(sys.argv[7]))
+                result= dfs(Graph_RDD,Pvalue_RDD,radius=args.radius, anomaly_ratio=args.anomaly_ratio, minutes= args.minutes, alpha_max= args.alpha_max)
             elif method==3:
-                result= additivescan(Graph_RDD,Pvalue_RDD,npss=sys.argv[4],iterations_bound=int(sys.argv[5]),ncores=int(sys.argv[6]),minutes=float(sys.argv[7]))
+                result= additivescan(Graph_RDD,Pvalue_RDD,npss=args.npss, iterations_bound= args.iterations_bound, ncores= args.ncores, minutes= args.minutes )
             elif method==4:
-                result = nphgs(Graph_RDD, Pvalue_RDD,alpha_max=float(sys.argv[4]),npss=sys.argv[5])
+                result = nphgs(Graph_RDD, Pvalue_RDD,alpha_max= args.alpha_max, npss= args.npss)
             Results=Results.union(result)
         writeFile(outroot,method,Graph,Results)
     
     elif method in [5]:
         E,Pvalue=genE(Graph)
         if method==5:
-            result = meden(E,Pvalue,alpha_max=float(sys.argv[4]))
+            result = meden(E,Pvalue,alpha_max= args.alpha_max)
         writeFile(outroot,method,Graph,result)
     
 
