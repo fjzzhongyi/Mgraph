@@ -199,7 +199,7 @@ def RDDdec(Graph_RDD,Pvalue_RDD):
         Graph[ele[0]]=ele[1]
     Pvalue=\
     [ele[1] for ele in sorted(Pvalue_RDD.collect(),key=lambda x: x[0])]
-    print Graph,Pvalue
+    #print Graph,Pvalue
     return Graph,Pvalue
 def SubgraphEnc(subgraphs):
     global sc
