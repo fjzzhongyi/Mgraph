@@ -102,7 +102,7 @@ if __name__=="__main__":
     parser.add_argument("--radius",type=float)
     parser.add_argument("--anomaly_ratio",type=float)
     parser.add_argument("--minutes",type=int)
-    parser.add_argument("--interations_bound",type=int)
+    parser.add_argument("--iterations_bound",type=int)
     parser.add_argument("--ncores",type=int)
     args=parser.parse_args()
     

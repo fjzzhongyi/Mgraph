@@ -11,7 +11,7 @@ parser.add_argument("-I","--Input",help="your input path of raw data")
 parser.add_argument("-O","--Output",help="your output path of result")
 parser.add_argument("-D","--Duration",type=int,default=1,help="observed duration(time intervals) of data when calculate the pvalue")
 
-parser.add_argument("-A","--Algorithm",help="the path of your algorithm to be added",required=True)
+parser.add_argument("-A","--Algorithm",help="the path of your algorithm to be added")
 
 args=parser.parse_args()
 #print args
