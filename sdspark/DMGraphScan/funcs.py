@@ -72,7 +72,7 @@ def genG(Graph=None, fileinput=False):
         f2.close()
         return G
     else:
-        print Graph
+        #print Graph
         G={}
         
         for n1 in Graph.keys():

@@ -1,5 +1,6 @@
 *.quadruples
 *.pyc
+data_sample
 data
 P
 G
